@@ -96,7 +96,7 @@ const ObjectCard = ({ object, onEdit, onDelete, canPerformActions }) => {
             </svg>
             <p className="text-gray-600">Qavatlar: {object.floors}</p>
           </div>
-          {/* Xonadonlar statistikasi — barcha statuslar */}
+          {/* Xonadonlar statistikasi — barcha statuslar va obyekt bo'yicha umumiy */}
           <div className="pt-2 border-t border-gray-100 space-y-1.5">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Xonadonlar statistikasi</p>
             <div className="grid grid-cols-2 gap-1.5">
@@ -105,6 +105,10 @@ const ObjectCard = ({ object, onEdit, onDelete, canPerformActions }) => {
                   {label}: {stats[key] ?? 0}
                 </div>
               ))}
+              {/* Obyekt bo'yicha umumiy statistika */}
+              <div className="col-span-2 rounded px-2 py-1.5 text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+                Umumiy (obyekt bo&apos;yicha jami): {Number(object.total_apartments) ?? 0} ta xonadon
+              </div>
             </div>
           </div>
           {object.description && (
