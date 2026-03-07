@@ -15,6 +15,8 @@ from .filters import PaymentFilter
 from rest_framework import serializers
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.http import FileResponse
 from django.core.files import File
 import io
@@ -123,7 +125,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class CustomTokenObtainPairView(TokenObtainPairView):
+    """Login API — brauzerdan POST uchun CSRF talab qilinmaydi."""
     serializer_class = CustomTokenObtainPairSerializer
 
 class ObjectViewSet(viewsets.ModelViewSet):
