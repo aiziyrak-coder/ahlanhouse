@@ -63,19 +63,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <UserNav />
       </header>
 
-      {/* Main content — full width, padding above dock */}
-      <main id="main-content" className="content-area flex-1 overflow-auto p-6 pb-6" tabIndex={-1}>
+      {/* Main content — pastda dok va footer uchun joy */}
+      <main id="main-content" className="content-area flex-1 overflow-auto p-6 pb-28" tabIndex={-1}>
         <div className="app-page">{children}</div>
       </main>
 
-      {/* Footer — ingichka, alohida, hech narsa ustiga tushmasin */}
-      <div className="flex-shrink-0 mb-20">
-        <AppFooter />
-      </div>
+      {/* Footer — eng pastda, bitta ingichka qator */}
+      <AppFooter />
 
-      {/* Bottom dock — macOS style, animated */}
+      {/* Bottom dock — sidebar footerdan yuqorida, ustma-ust tushmasin */}
       <nav
-        className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2"
+        className="fixed bottom-10 left-1/2 z-50 -translate-x-1/2"
         aria-label="Bosh menyu"
       >
         <div className="dock-container flex items-end gap-1 rounded-2xl border border-white/40 bg-gradient-to-r from-white/70 via-white/60 to-white/70 px-2 py-2 shadow-xl shadow-blue-500/10 backdrop-blur-2xl transition-all duration-300 hover:shadow-2xl hover:shadow-violet-500/15">
