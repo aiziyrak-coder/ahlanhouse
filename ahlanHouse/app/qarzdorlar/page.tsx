@@ -136,7 +136,13 @@ const QarzdorlarPageComponent = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [hasPageAccess, setHasPageAccess] = useState<boolean | null>(null);
-  
+
+  const getAuthHeaders = useCallback(() => ({
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${accessToken}`,
+  }), [accessToken]);
+
   const sendTelegramNotification = useCallback(async (message: string) => {
     const headers = getAuthHeaders();
     if (!headers || !(headers as Record<string, string>)["Authorization"] || !TELEGRAM_CHAT_ID) return;
@@ -192,12 +198,6 @@ const QarzdorlarPageComponent = () => {
       }
     }
   }, [router]);
-
-  const getAuthHeaders = useCallback(() => ({
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${accessToken}`,
-  }), [accessToken]);
 
   const fetchAllUsers = useCallback(async (page = 1, allUsers: User[] = []): Promise<User[]> => {
     if (!hasPageAccess || typeof window === 'undefined') return [];

@@ -509,6 +509,13 @@ export default function ExpensesPage() {
         }
     });
 
+    const toApiDate = (d: string) => {
+        if (!d) return d;
+        const parsed = new Date(d);
+        if (!isNaN(parsed.getTime())) return format(parsed, "yyyy-MM-dd");
+        return d;
+    };
+
     const createExpense = () => handleActionAndRefetch(async () => {
         if (!validateFormData()) return;
         setIsSubmitting(true);
@@ -518,14 +525,24 @@ export default function ExpensesPage() {
             formPayload.append("supplier", formData.supplier);
             formPayload.append("amount", formData.amount);
             formPayload.append("expense_type", formData.expense_type);
-            formPayload.append("date", formData.date);
+            formPayload.append("date", toApiDate(formData.date));
             formPayload.append("comment", formData.comment.trim());
             formPayload.append("status", formData.status === "Naqd pul" ? "To'langan" : "Kutilmoqda");
             if (expenseImageFiles.length > 0) {
                 formPayload.append("image", expenseImageFiles[0], expenseImageFiles[0].name || "image.jpg");
             }
             const headers: HeadersInit = { Authorization: `Bearer ${accessToken}` };
-            const res = await fetch(`${API_BASE_URL}/expenses/`, { method: "POST", headers, body: formPayload });
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
+            let res: Response;
+            try {
+                res = await fetch(`${API_BASE_URL}/expenses/`, { method: "POST", headers, body: formPayload, signal: controller.signal });
+            } catch (e: unknown) {
+                clearTimeout(timeoutId);
+                if ((e as Error)?.name === "AbortError") throw new Error("Server javob bermadi. Qayta urinib ko'ring.");
+                throw new Error((e as Error)?.message || "Tarmoq xatosi. Internetni tekshiring.");
+            }
+            clearTimeout(timeoutId);
             if (res.status === 401) { clearAuthAndRedirect(router); return; }
             if (!res.ok) {
                 const errBody = await res.json().catch(() => ({}));
@@ -536,36 +553,41 @@ export default function ExpensesPage() {
                             .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`)
                             .join("; "))
                     : res.statusText;
-                throw new Error(msg || "Xarajat qo'shilmadi");
+                throw new Error(msg || `Xarajat qo'shilmadi (${res.status})`);
             }
             const newExpense = await res.json();
+            setOpen(false);
+            setFormData(initialFormData);
+            setExpenseImageFiles([]);
             toast.success("Xarajat muvaffaqiyatli qo'shildi");
 
             const updatedTotals = await fetchExpensesAndTotals();
 
-            const supplierName = suppliers.find(s => s.id === Number(formData.supplier))?.company_name;
-            const objectName = properties.find(p => p.id === Number(formData.object))?.name;
-            const expenseTypeName = expenseTypes.find(t => t.id === Number(formData.expense_type))?.name;
-            let message = `<b>➕ Yangi Xarajat Qo'shildi</b>\n\n` +
-                            `<b>Kim tomonidan:</b> ${currentUser?.fio || "Noma'lum"}\n` +
-                            `<b>Obyekt:</b> ${objectName || '—'}\n`+
-                            `<b>Yetkazib beruvchi:</b> ${supplierName || '—'}\n`+
-                            `<b>Xarajat turi:</b> ${expenseTypeName || '—'}\n\n`+
-                            `<b>Summa:</b> ${formatCurrency(formData.amount)}\n`+
-                            `<b>Sana:</b> ${formatDate(formData.date)}\n`+
-                            `<b>Holat:</b> ${formData.status}\n`+
-                            `<b>Izoh:</b> ${formData.comment}`;
-            message += `\n\n➖➖➖➖➖\n` +
-                       `<b>📊 Umumiy Holat:</b>\n` +
-                       `<b>Jami Xarajat:</b> ${formatCurrency(updatedTotals.totalAmount)}\n` +
-                       `<b>To'langan:</b> ${formatCurrency(updatedTotals.paidAmount)}\n` +
-                       `<b>Nasiya qoldiq:</b> ${formatCurrency(updatedTotals.pendingDebt)}`;
-            await sendTelegramNotification(message, getAuthHeaders);
-
-            for (let i = 0; i < expenseImageFiles.length; i++) {
-                await sendImageToTelegram(expenseImageFiles[i], `Xarajat ID: ${newExpense.id} uchun rasm (${i + 1}/${expenseImageFiles.length})`);
+            try {
+                const supplierName = suppliers.find(s => s.id === Number(formData.supplier))?.company_name;
+                const objectName = properties.find(p => p.id === Number(formData.object))?.name;
+                const expenseTypeName = expenseTypes.find(t => t.id === Number(formData.expense_type))?.name;
+                let message = `<b>➕ Yangi Xarajat Qo'shildi</b>\n\n` +
+                                `<b>Kim tomonidan:</b> ${currentUser?.fio || "Noma'lum"}\n` +
+                                `<b>Obyekt:</b> ${objectName || '—'}\n`+
+                                `<b>Yetkazib beruvchi:</b> ${supplierName || '—'}\n`+
+                                `<b>Xarajat turi:</b> ${expenseTypeName || '—'}\n\n`+
+                                `<b>Summa:</b> ${formatCurrency(formData.amount)}\n`+
+                                `<b>Sana:</b> ${formatDate(formData.date)}\n`+
+                                `<b>Holat:</b> ${formData.status}\n`+
+                                `<b>Izoh:</b> ${formData.comment}`;
+                message += `\n\n➖➖➖➖➖\n` +
+                           `<b>📊 Umumiy Holat:</b>\n` +
+                           `<b>Jami Xarajat:</b> ${formatCurrency(updatedTotals.totalAmount)}\n` +
+                           `<b>To'langan:</b> ${formatCurrency(updatedTotals.paidAmount)}\n` +
+                           `<b>Nasiya qoldiq:</b> ${formatCurrency(updatedTotals.pendingDebt)}`;
+                await sendTelegramNotification(message, getAuthHeaders);
+                for (let i = 0; i < expenseImageFiles.length; i++) {
+                    await sendImageToTelegram(expenseImageFiles[i], `Xarajat ID: ${newExpense.id} uchun rasm (${i + 1}/${expenseImageFiles.length})`);
+                }
+            } catch (_) {
+                console.error("Telegram xabar yuborishda xato");
             }
-            setOpen(false); setFormData(initialFormData); setExpenseImageFiles([]);
         } finally {
             setIsSubmitting(false);
         }
@@ -580,14 +602,24 @@ export default function ExpensesPage() {
             formPayload.append("supplier", formData.supplier);
             formPayload.append("amount", formData.amount);
             formPayload.append("expense_type", formData.expense_type);
-            formPayload.append("date", formData.date);
+            formPayload.append("date", toApiDate(formData.date));
             formPayload.append("comment", formData.comment.trim());
             formPayload.append("status", formData.status === "Naqd pul" ? "To'langan" : "Kutilmoqda");
             if (expenseImageFiles.length > 0) {
                 formPayload.append("image", expenseImageFiles[0], expenseImageFiles[0].name || "image.jpg");
             }
             const headers: HeadersInit = { Authorization: `Bearer ${accessToken}` };
-            const res = await fetch(`${API_BASE_URL}/expenses/${id}/`, { method: "PATCH", headers, body: formPayload });
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
+            let res: Response;
+            try {
+                res = await fetch(`${API_BASE_URL}/expenses/${id}/`, { method: "PATCH", headers, body: formPayload, signal: controller.signal });
+            } catch (e: unknown) {
+                clearTimeout(timeoutId);
+                if ((e as Error)?.name === "AbortError") throw new Error("Server javob bermadi. Qayta urinib ko'ring.");
+                throw new Error((e as Error)?.message || "Tarmoq xatosi.");
+            }
+            clearTimeout(timeoutId);
             if (res.status === 401) { clearAuthAndRedirect(router); return; }
             if (!res.ok) {
                 const errBody = await res.json().catch(() => ({}));
