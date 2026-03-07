@@ -51,18 +51,16 @@ const handleApiError = (error, response, router) => {
   return false;
 };
 
-// Xonadon statuslari (aniq). Umumiy = obyektning qattiq xonadonlar soni (total_apartments)
-const APARTMENT_STATUS_LABELS = {
-  bosh: { label: "Bo'sh", color: "bg-emerald-100 text-emerald-800" },
-  band: { label: "Band qilingan", color: "bg-amber-100 text-amber-800" },
-  muddatli: { label: "Muddatli", color: "bg-blue-100 text-blue-800" },
-  qarzdor: { label: "Qarzdor", color: "bg-red-100 text-red-800" },
-  sotilgan: { label: "Sotilgan", color: "bg-slate-200 text-slate-800" },
-};
+// Kartada faqat 3 ta status: Bo'sh, Band qilingan, Sotilgan — yig'indisi = Xonadonlar soni
+const APARTMENT_STATUS_LABELS_3 = [
+  { key: 'bosh' as const, label: "Bo'sh", color: "bg-emerald-100 text-emerald-800" },
+  { key: 'band' as const, label: "Band qilingan", color: "bg-amber-100 text-amber-800" },
+  { key: 'sotilgan' as const, label: "Sotilgan", color: "bg-slate-200 text-slate-800" },
+];
 
 // Obyekt kartasi komponenti
 const ObjectCard = ({ object, onEdit, onDelete, canPerformActions }) => {
-  const stats = object.apartment_stats || { bosh: 0, band: 0, muddatli: 0, qarzdor: 0, sotilgan: 0 };
+  const stats = object.apartment_stats || { bosh: 0, band: 0, sotilgan: 0 };
   const totalApartments = object.total_apartments ?? 0;
 
   return (
@@ -98,16 +96,15 @@ const ObjectCard = ({ object, onEdit, onDelete, canPerformActions }) => {
             </svg>
             <p className="text-gray-600">Qavatlar: {object.floors}</p>
           </div>
-          {/* Xonadonlar statistikasi — barcha statuslar va obyekt bo'yicha umumiy */}
+          {/* Xonadonlar statistikasi — 3 ta status: Bo'sh, Band qilingan, Sotilgan (yig'indisi = 40) */}
           <div className="pt-2 border-t border-gray-100 space-y-1.5">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Xonadonlar statistikasi</p>
             <div className="grid grid-cols-2 gap-1.5">
-              {(Object.entries(APARTMENT_STATUS_LABELS) as [keyof typeof APARTMENT_STATUS_LABELS, typeof APARTMENT_STATUS_LABELS.bosh][]).map(([key, { label, color }]) => (
+              {APARTMENT_STATUS_LABELS_3.map(({ key, label, color }) => (
                 <div key={key} className={`rounded px-2 py-1 text-xs font-medium ${color}`}>
                   {label}: {stats[key] ?? 0}
                 </div>
               ))}
-              {/* Umumiy = obyektning qattiq xonadonlar soni (total_apartments) */}
               <div className="col-span-2 rounded px-2 py-1.5 text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
                 Umumiy (jami): {totalApartments} ta xonadon
               </div>

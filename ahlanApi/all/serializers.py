@@ -24,12 +24,12 @@ class ObjectSerializer(serializers.ModelSerializer):
 
     def get_apartment_stats(self, obj):
         """
-        Obyekt bo'yicha xonadonlar statistikasi — faqat aniq status bo'yicha, kamchiliksiz.
-        Har bir xonadon bitta statusga kiritiladi: bosh, band, muddatli, qarzdor, sotilgan.
+        Obyekt bo'yicha xonadonlar statistikasi.
+        Kartada 3 ta status: Bo'sh, Band qilingan, Sotilgan — ular yig'indisi doim total_apartments.
+        Sotilgan va Band bazadan; Bo'sh = total_apartments - sotilgan - band.
         """
         qs = obj.apartments.all()
-        # Bo'sh — faqat status='bosh'
-        bosh = qs.filter(status='bosh').count()
+        total = obj.total_apartments or 0
         # Band qilingan — faqat status='band'
         band = qs.filter(status='band').count()
         # Sotilgan — status='sotilgan' yoki muddatli bo'lib to'liq to'langan (balance >= price)
@@ -37,16 +37,11 @@ class ObjectSerializer(serializers.ModelSerializer):
             Q(status='sotilgan') |
             (Q(status='muddatli') & Q(balance__gte=F('price')))
         ).count()
-        # Muddatli — status='muddatli', balance < price, muddati o'tmagan to'lov yo'q
-        # Qarzdor — status='muddatli', balance < price, kamida bitta to'lov status='overdue'
-        muddatli_qs = qs.filter(status='muddatli', balance__lt=F('price'))
-        qarzdor = muddatli_qs.filter(payments__status='overdue').distinct().count()
-        muddatli = muddatli_qs.count() - qarzdor
+        # Bo'sh — qolgani (ro'yxatda yo'q + bosh + muddatli/qarzdor hali to'lmagan) — yig'indi = total
+        bosh = max(0, total - sotilgan - band)
         return {
             'bosh': bosh,
             'band': band,
-            'muddatli': muddatli,
-            'qarzdor': qarzdor,
             'sotilgan': sotilgan,
         }
 
