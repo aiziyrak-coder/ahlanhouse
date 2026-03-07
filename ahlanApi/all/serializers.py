@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from django.db.models import Count, Q, F
+from django.db.models import Count, Q, F, Sum
+from django.db.models.functions import Coalesce
+from django.db.models import Value
+from decimal import Decimal
 from .models import Object, Apartment, User, ExpenseType, Supplier, Expense, Payment, Document, UserPayment, SupplierPayment, RoomTypeModel, OrganizationReport
 
 
@@ -24,20 +27,29 @@ class ObjectSerializer(serializers.ModelSerializer):
 
     def get_apartment_stats(self, obj):
         """
-        Obyekt bo'yicha xonadonlar statistikasi.
-        Kartada 3 ta status: Bo'sh, Band qilingan, Sotilgan — ular yig'indisi doim total_apartments.
-        Sotilgan va Band bazadan; Bo'sh = total_apartments - sotilgan - band.
+        Obyekt bo'yicha xonadonlar statistikasi — ro'yxatdagi haqiqiy holatga mos.
+        Sotilgan: status=sotilgan, yoki balance>=price, yoki to'lovlar yig'indisi (total_paid)>=price.
+        Band: status=band yoki band to'lovi bor va hali to'lanmagan (sotilgan emas).
+        Bo'sh: total_apartments - sotilgan - band.
         """
-        qs = obj.apartments.all()
         total = obj.total_apartments or 0
-        # Band qilingan — faqat status='band'
-        band = qs.filter(status='band').count()
-        # Sotilgan — status='sotilgan' yoki muddatli bo'lib to'liq to'langan (balance >= price)
-        sotilgan = qs.filter(
+        # To'lovlar yig'indisi bo'yicha ham sotilganni hisoblash (balance yangilanmagan bo'lsa ham)
+        qs = obj.apartments.all().annotate(
+            total_paid=Coalesce(Sum('payments__paid_amount'), Value(Decimal('0')))
+        )
+        # Sotilgan: status sotilgan, yoki balans to'liq, yoki to'lovlar summasiga qarab to'liq to'langan
+        sold_filter = (
             Q(status='sotilgan') |
-            (Q(status='muddatli') & Q(balance__gte=F('price')))
-        ).count()
-        # Bo'sh — qolgani (ro'yxatda yo'q + bosh + muddatli/qarzdor hali to'lmagan) — yig'indi = total
+            Q(balance__gte=F('price')) |
+            Q(total_paid__gte=F('price'))
+        )
+        sotilgan = qs.filter(sold_filter).count()
+        # Band: sotilgan emas, lekin band qilingan (status=band yoki band to'lovi pending/overdue)
+        band_filter = (
+            Q(status='band') |
+            Q(payments__payment_type='band', payments__status__in=['pending', 'overdue'])
+        )
+        band = qs.exclude(sold_filter).filter(band_filter).distinct().count()
         bosh = max(0, total - sotilgan - band)
         return {
             'bosh': bosh,
