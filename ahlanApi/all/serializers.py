@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from django.db.models import Count
+from django.db.models import Count, Q, F
 from .models import Object, Apartment, User, ExpenseType, Supplier, Expense, Payment, Document, UserPayment, SupplierPayment, RoomTypeModel, OrganizationReport
 
 
@@ -23,14 +23,19 @@ class ObjectSerializer(serializers.ModelSerializer):
         return None
 
     def get_apartment_stats(self, obj):
-        """Obyekt bo'yicha xonadonlar soni statuslar kesimida."""
-        stats = obj.apartments.values('status').annotate(count=Count('id'))
-        by_status = {s['status']: s['count'] for s in stats}
+        """Obyekt bo'yicha xonadonlar soni statuslar kesimida. Sotilgan: status='sotilgan' yoki to'liq to'langan (balance >= price)."""
+        qs = obj.apartments.all()
+        bosh = qs.filter(status='bosh').count()
+        band = qs.filter(status='band').count()
+        # Sotilgan: rasman sotilgan yoki to'liq to'langan (balans narxdan katta yoki teng)
+        sotilgan = qs.filter(Q(status='sotilgan') | (Q(status='muddatli') & Q(balance__gte=F('price')))).count()
+        # Muddatli: faqat hali to'liq to'lanmaganlar
+        muddatli = qs.filter(status='muddatli', balance__lt=F('price')).count()
         return {
-            'bosh': by_status.get('bosh', 0),
-            'band': by_status.get('band', 0),
-            'muddatli': by_status.get('muddatli', 0),
-            'sotilgan': by_status.get('sotilgan', 0),
+            'bosh': bosh,
+            'band': band,
+            'muddatli': muddatli,
+            'sotilgan': sotilgan,
         }
 
 class ApartmentSerializer(serializers.ModelSerializer):
