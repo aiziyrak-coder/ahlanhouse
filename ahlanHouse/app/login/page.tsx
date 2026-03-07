@@ -45,11 +45,13 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      let phone = (formData.phone_number || "").trim().replace(/\s/g, "")
+      if (phone && !phone.startsWith("+")) phone = "+" + phone
       const response = await fetch(`${getApiBaseUrl()}/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone_number: formData.phone_number,
+          phone_number: phone,
           password: formData.password,
         }),
       })

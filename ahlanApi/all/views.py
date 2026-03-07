@@ -107,8 +107,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         # Frontend sends phone_number; SimpleJWT uses username (our User.USERNAME_FIELD = phone_number)
-        if attrs.get('phone_number') and not attrs.get('username'):
-            attrs['username'] = attrs['phone_number']
+        phone = attrs.get('phone_number') or attrs.get('username') or ''
+        if phone and not attrs.get('username'):
+            phone = str(phone).strip()
+            if phone and not phone.startswith('+'):
+                phone = '+' + phone
+            attrs['username'] = phone
         return super().validate(attrs)
 
     @classmethod
