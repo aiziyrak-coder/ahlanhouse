@@ -151,7 +151,7 @@ export default function ApartmentsPage() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
-  const [filterStats, setFilterStats] = useState<{ total: number; bosh: number; band: number; sotilgan: number } | null>(null);
+  const [filterStats, setFilterStats] = useState<{ total: number; bosh: number; band: number; sotilgan: number; muddatli?: number } | null>(null);
   const [filters, setFilters] = useState({
     status: statusParam,
     rooms: roomsParam,
@@ -721,10 +721,11 @@ export default function ApartmentsPage() {
           <Card>
             <CardContent className="p-4">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Umumiy xonadonlar statistikasi (filtr bo&apos;yicha)</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 <div className="rounded-lg px-3 py-2 text-sm font-medium bg-emerald-100 text-emerald-800">Bo&apos;sh: {filterStats.bosh}</div>
                 <div className="rounded-lg px-3 py-2 text-sm font-medium bg-amber-100 text-amber-800">Band qilingan: {filterStats.band}</div>
                 <div className="rounded-lg px-3 py-2 text-sm font-medium bg-slate-200 text-slate-800">Sotilgan: {filterStats.sotilgan}</div>
+                <div className="rounded-lg px-3 py-2 text-sm font-medium bg-orange-100 text-orange-800">Muddatli: {filterStats.muddatli ?? 0}</div>
                 <div className="rounded-lg px-3 py-2 text-sm font-semibold bg-gray-100 text-gray-800 border border-gray-200">Umumiy: {filterStats.total} ta</div>
               </div>
             </CardContent>

@@ -9,7 +9,8 @@ from .models import Object, Apartment, User, ExpenseType, Supplier, Expense, Pay
 def get_apartment_stats_for_queryset(queryset):
     """
     Berilgan Apartment queryset bo'yicha statistikani hisoblaydi (filtrlangan ro'yxat uchun).
-    Qaytaradi: { total, bosh, band, sotilgan } — xonadonlar ro'yxatidan kelib chiqqan.
+    Qaytaradi: { total, bosh, band, sotilgan, muddatli } — xonadonlar ro'yxatidan kelib chiqqan.
+    muddatli: asosiy to'lov turi muddatli bo'lgan xonadonlar soni (alohida ko'rsatish uchun).
     """
     qs = queryset.annotate(
         total_paid=Coalesce(Sum('payments__paid_amount'), Value(Decimal('0')))
@@ -27,7 +28,8 @@ def get_apartment_stats_for_queryset(queryset):
     band = qs.exclude(sold_filter).filter(band_filter).distinct().count()
     total = queryset.count()
     bosh = max(0, total - sotilgan - band)
-    return {'total': total, 'bosh': bosh, 'band': band, 'sotilgan': sotilgan}
+    muddatli = queryset.filter(payments__payment_type='muddatli').distinct().count()
+    return {'total': total, 'bosh': bosh, 'band': band, 'sotilgan': sotilgan, 'muddatli': muddatli}
 
 
 class ObjectSerializer(serializers.ModelSerializer):
