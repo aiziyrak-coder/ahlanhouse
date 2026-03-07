@@ -19,7 +19,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortableTableHead, type SortDirection } from "@/components/sortable-table-head";
 import { sortByKey } from "@/lib/table-sort";
-import { getApiBaseUrl } from "@/app/lib/api";
+import { getApiBaseUrl, clearAuthAndRedirect, getErrorMessage } from "@/app/lib/api";
 import { PageHeader } from "@/components/page-header";
 
 interface Payment {
@@ -102,9 +102,8 @@ export default function DashboardPage() {
         const statsResponse = await fetch(url, { method: "GET", headers: getAuthHeaders() });
         if (!statsResponse.ok) {
           if (statsResponse.status === 401) {
-            localStorage.removeItem("access_token");
             setLoading(false);
-            router.push("/login");
+            clearAuthAndRedirect(router);
             return;
           }
           throw new Error("Statistikani olishda xatolik");
@@ -118,6 +117,11 @@ export default function DashboardPage() {
           { method: "GET", headers: getAuthHeaders() }
         );
         if (!soldApartmentsResponse.ok) {
+          if (soldApartmentsResponse.status === 401) {
+            setLoading(false);
+            clearAuthAndRedirect(router);
+            return;
+          }
           throw new Error("Sotilgan xonadonlarni olishda xatolik");
         }
         const soldApartmentsData = await soldApartmentsResponse.json();
@@ -130,6 +134,11 @@ export default function DashboardPage() {
           method: "GET", headers: getAuthHeaders(),
         });
         if (!suppliersResponse.ok) {
+          if (suppliersResponse.status === 401) {
+            setLoading(false);
+            clearAuthAndRedirect(router);
+            return;
+          }
           throw new Error("Yetkazib beruvchilarni olishda xatolik");
         }
         const suppliersData = await suppliersResponse.json();
@@ -150,8 +159,8 @@ export default function DashboardPage() {
           paymentsDueToday: statsData.payments_due_today || 0,
           paymentsPaidToday: statsData.payments_paid_today || 0,
         });
-      } catch (error: any) {
-        toast({ title: "Xatolik", description: error.message, variant: "destructive" });
+      } catch (error: unknown) {
+        toast({ title: "Xatolik", description: getErrorMessage(error, "Statistikani yuklashda xatolik"), variant: "destructive" });
       } finally {
         setLoading(false);
       }
@@ -173,8 +182,7 @@ export default function DashboardPage() {
         const response = await fetch(url, { method: "GET", headers: getAuthHeaders() });
         if (!response.ok) {
           if (response.status === 401) {
-            localStorage.removeItem("access_token");
-            router.push("/login");
+            clearAuthAndRedirect(router);
             return;
           }
           throw new Error("To'lovlarni olishda xatolik");
@@ -182,8 +190,8 @@ export default function DashboardPage() {
 
         const data = await response.json();
         setRecentPayments(data.results || []);
-      } catch (error: any) {
-        toast({ title: "Xatolik", description: error.message, variant: "destructive" });
+      } catch (error: unknown) {
+        toast({ title: "Xatolik", description: getErrorMessage(error, "To'lovlarni olishda xatolik"), variant: "destructive" });
         setRecentPayments([]);
       }
     };
@@ -206,12 +214,18 @@ export default function DashboardPage() {
         }
 
         const response = await fetch(url, { method: "GET", headers: getAuthHeaders() });
-        if (!response.ok) throw new Error(`${type} to'lovlarni olishda xatolik`);
+        if (!response.ok) {
+          if (response.status === 401) {
+            clearAuthAndRedirect(router);
+            return;
+          }
+          throw new Error(`${type} to'lovlarni olishda xatolik`);
+        }
 
         const data = await response.json();
         setModalPayments(data.results || []);
-      } catch (error: any) {
-        toast({ title: "Xatolik", description: error.message, variant: "destructive" });
+      } catch (error: unknown) {
+        toast({ title: "Xatolik", description: getErrorMessage(error, "To'lovlarni olishda xatolik"), variant: "destructive" });
         setModalPayments([]);
       } finally {
         setModalLoading(false);

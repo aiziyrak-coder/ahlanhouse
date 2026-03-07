@@ -29,3 +29,13 @@ export function clearAuthAndRedirect(
   if (isSotuv) localStorage.removeItem("sales_module");
   router.push(isSotuv ? "/sotuv/login" : "/login");
 }
+
+/** Type-safe xato xabari (catch (error: unknown) uchun). */
+export function getErrorMessage(error: unknown, fallback = "Noma'lum xatolik"): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && "message" in error && typeof (error as { message: unknown }).message === "string") {
+    return (error as { message: string }).message;
+  }
+  return fallback;
+}

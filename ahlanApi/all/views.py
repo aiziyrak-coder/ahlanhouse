@@ -413,36 +413,42 @@ class PaymentViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def process_payment(self, request, pk=None):
         payment = self.get_object()
-        amount = Decimal(request.data.get('amount', 0))
+        try:
+            amount = Decimal(str(request.data.get('amount', 0)))
+        except (TypeError, ValueError):
+            return Response({'error': 'Summa son bo\'lishi kerak'}, status=status.HTTP_400_BAD_REQUEST)
         payment_date = request.data.get('payment_date')
 
         if amount <= 0:
-            return Response({'error': 'Summa musbat bo‘lishi kerak'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Summa musbat bo\'lishi kerak'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Sana formatini tekshirish va o‘zgartirish
             if payment_date:
-                payment.payment_date = timezone.make_aware(datetime.strptime(payment_date, '%Y-%m-%d'))
+                parsed = datetime.strptime(
+                    payment_date if isinstance(payment_date, str) else str(payment_date),
+                    '%Y-%m-%d'
+                )
+                payment.payment_date = timezone.make_aware(parsed) if timezone.is_naive(parsed) else parsed
             payment.paid_amount += amount
             payment.update_status()
             payment.save()
 
-            # Xonadon balansini yangilash
             apartment = payment.apartment
             apartment.update_balance()
             apartment.update_status()
 
-            # Javob tayyorlash
             serializer = self.get_serializer(payment)
-            response_data = serializer.data
-            response_data['message'] = 'To‘lov muvaffaqiyatli qayta ishlandi'
+            response_data = dict(serializer.data)
+            response_data['message'] = 'To\'lov muvaffaqiyatli qayta ishlandi'
             response_data['apartment_status'] = apartment.status
             response_data['apartment_balance'] = apartment.balance
             response_data['overdue_payments'] = apartment.get_overdue_payments()
 
             return Response(response_data, status=status.HTTP_200_OK)
         except ValueError as e:
-            return Response({'error': f'Sana formati noto‘g‘ri: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'Sana formati noto\'g\'ri: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def get_overdue_payments(self, request, pk=None):
@@ -522,7 +528,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def statistics(self, request):
-        today = datetime.now().date()
+        today = timezone.now().date()
         total_sales = Payment.objects.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         sold_apartments = Apartment.objects.filter(status='sotilgan').count()
         clients = User.objects.filter(user_type='mijoz').count()

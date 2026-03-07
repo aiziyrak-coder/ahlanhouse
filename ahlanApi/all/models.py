@@ -109,25 +109,27 @@ class Apartment(models.Model):
 
     def update_balance(self):
         """
-        Xonadon balansini yangilaydi: barcha to‘lovlarning paid_amount summasini hisoblaydi.
+        Xonadon balansini yangilaydi: barcha to'lovlarning paid_amount summasini hisoblaydi.
+        balance va total_payments ni sinxron saqlaydi.
         """
         total_paid = Decimal('0')
         for payment in self.payments.all():
             total_paid += payment.paid_amount or Decimal('0')
         self.balance = total_paid
+        self.total_payments = total_paid
         self.save()
 
     def update_status(self):
         """
-        Xonadon statusini yangilaydi: balans va muddati o‘tgan to‘lovlarga qarab.
+        Xonadon statusini yangilaydi: balans va muddati o'tgan to'lovlarga qarab.
+        Faqat modeldagi STATUS_CHOICES dan foydalanadi: bosh, band, muddatli, sotilgan.
         """
-        overdue_data = self.get_overdue_payments()
-        if overdue_data['total_overdue'] > 0:
-            self.status = 'overdue'
-        elif self.balance >= self.price:
-            self.status = 'paid'
-        else:
-            self.status = 'pending'
+        if self.balance >= self.price:
+            self.status = 'sotilgan'
+            self.reserved_until = None
+            self.reservation_amount = None
+        elif self.status not in ('band', 'muddatli', 'sotilgan'):
+            self.status = 'muddatli' if self.balance > 0 else 'bosh'
         self.save()
 
     def get_overdue_payments(self):
@@ -282,10 +284,25 @@ class Expense(models.Model):
         if self.pk is None:
             self.supplier.balance += self.amount
             self.supplier.save()
+        else:
+            try:
+                old = Expense.objects.get(pk=self.pk)
+                diff = self.amount - old.amount
+                if diff != 0:
+                    self.supplier.balance += diff
+                    self.supplier.save()
+            except Expense.DoesNotExist:
+                self.supplier.balance += self.amount
+                self.supplier.save()
         super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        self.supplier.balance -= self.amount
+        self.supplier.save()
+        super().delete(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.supplier.company_name} - self.amount"
+        return f"{self.supplier.company_name} - {self.amount}"
 
     class Meta:
         verbose_name = "Xarajat"

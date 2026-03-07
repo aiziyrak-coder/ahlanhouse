@@ -83,7 +83,7 @@ def build_full_report_docx():
         _add_table_from_rows(doc,
             ['№', 'Obyekt', 'Xona raqami', 'Xonalar', 'Maydoni', 'Narx', 'Holat', 'Balans', 'Jami to\'lov'],
             [
-                (i, a.object.name, a.room_number, a.rooms, a.area, a.price, a.get_status_display() if hasattr(a, 'get_status_display') else a.status, a.balance, a.total_payments)
+                (i, a.object.name, a.room_number, a.rooms, a.area, a.price, a.get_status_display(), a.balance, a.total_payments)
                 for i, a in enumerate(apartments, 1)
             ]
         )
@@ -110,7 +110,7 @@ def build_full_report_docx():
         _add_table_from_rows(doc,
             ['№', 'Mijoz', 'Xonadon', 'Jami summa', 'To\'langan', 'Qolgan', 'Holat', 'To\'lov turi'],
             [
-                (i, p.user.fio, f"{p.apartment.object.name} — {p.apartment.room_number}", p.total_amount, p.paid_amount, p.total_amount - p.paid_amount, p.get_status_display() if hasattr(p, 'get_status_display') else p.status, p.get_payment_type_display() if hasattr(p, 'get_payment_type_display') else p.payment_type)
+                (i, p.user.fio, f"{p.apartment.object.name} — {p.apartment.room_number}", p.total_amount, p.paid_amount, p.total_amount - p.paid_amount, p.get_status_display(), p.get_payment_type_display())
                 for i, p in enumerate(payments, 1)
             ]
         )
@@ -124,7 +124,7 @@ def build_full_report_docx():
     if user_payments:
         _add_table_from_rows(doc,
             ['№', 'Mijoz', 'Summa', 'To\'lov turi', 'Sana'],
-            [(i, up.user.fio, up.amount, up.get_payment_type_display() if hasattr(up, 'get_payment_type_display') else up.payment_type, up.date.strftime('%d.%m.%Y %H:%M')) for i, up in enumerate(user_payments, 1)]
+            [(i, up.user.fio, up.amount, up.get_payment_type_display(), up.date.strftime('%d.%m.%Y %H:%M')) for i, up in enumerate(user_payments, 1)]
         )
     else:
         _add_para(doc, "Mijozlardan olingan to'lovlar yo'q.")
@@ -160,7 +160,7 @@ def build_full_report_docx():
     if supplier_payments:
         _add_table_from_rows(doc,
             ['№', 'Yetkazib beruvchi', 'Summa', 'To\'lov turi', 'Sana'],
-            [(i, sp.supplier.company_name, sp.amount, sp.get_payment_type_display() if hasattr(sp, 'get_payment_type_display') else sp.payment_type, sp.date.strftime('%d.%m.%Y %H:%M')) for i, sp in enumerate(supplier_payments, 1)]
+            [(i, sp.supplier.company_name, sp.amount, sp.get_payment_type_display(), sp.date.strftime('%d.%m.%Y %H:%M')) for i, sp in enumerate(supplier_payments, 1)]
         )
     else:
         _add_para(doc, "Yetkazib beruvchilarga to'lovlar yo'q.")
