@@ -145,3 +145,6 @@ JAZZMIN_UI_TWEAKS = {
     "theme": "darkly",
     "dark_mode_theme": "slate",
 }
+
+# Telegram: bot token faqat serverda (CORS va token xavfsizligi uchun proxy ishlatiladi)
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()

@@ -56,7 +56,6 @@ import toast, { Toaster } from "react-hot-toast";
 import { getApiBaseUrl, getApiRoot, clearAuthAndRedirect } from "@/app/lib/api";
 
 const API_BASE_URL = getApiBaseUrl();
-const TELEGRAM_BOT_TOKEN = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || "";
 const TELEGRAM_CHAT_ID = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID || "-1003733316489";
 
 const parsePaidAmountFromComment = (comment: string | null | undefined): { paidAmount: number; originalComment: string } => {
@@ -80,17 +79,20 @@ const createUpdatedComment = (originalComment: string, newPaidAmount: number): s
     return cleanOriginalComment;
 };
 
-const sendTelegramNotification = async (message: string) => {
+/** Telegram xabari backend proxy orqali (CORS va token xavfsizligi). getHeaders komponentdan beriladi. */
+const sendTelegramNotification = async (message: string, getHeaders: () => HeadersInit | null) => {
     try {
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: TELEGRAM_CHAT_ID,
-                text: message,
-                parse_mode: 'HTML'
-            })
+        const headers = getHeaders();
+        if (!headers) return;
+        const res = await fetch(`${API_BASE_URL}/telegram/send-message/`, {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: "HTML" }),
         });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error((err as { detail?: string }).detail || res.statusText);
+        }
     } catch (error) {
         console.error("Telegram xabarini yuborishda xatolik:", error);
     }
@@ -413,17 +415,20 @@ export default function ExpensesPage() {
         return true;
     };
     
-    /** Sends a single image to Telegram via sendPhoto (multipart/form-data with binary file). */
+    /** Rasmni Telegramga backend proxy orqali (CORS va token xavfsizligi). */
     const sendImageToTelegram = async (imageFile: File, caption: string) => {
+        const headers = getAuthHeaders();
+        if (!headers) return;
         const formData = new FormData();
         formData.append("chat_id", TELEGRAM_CHAT_ID);
         formData.append("photo", imageFile, imageFile.name || "image.jpg");
         formData.append("caption", caption);
         formData.append("parse_mode", "HTML");
         try {
-            const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, { method: "POST", body: formData });
+            const response = await fetch(`${API_BASE_URL}/telegram/send-photo/`, { method: "POST", headers, body: formData });
             const result = await response.json();
-            if (!result.ok) throw new Error(result.description || "Telegramga yuborishda xato");
+            if (!response.ok) throw new Error((result as { detail?: string }).detail || "Telegramga yuborishda xato");
+            if (result && !(result as { ok?: boolean }).ok) throw new Error((result as { description?: string }).description || "Telegramga yuborishda xato");
             toast.success("Xarajat rasmi Telegramga yuborildi.");
         } catch (error: unknown) {
             toast.error(`Rasm yuborilmadi: ${error instanceof Error ? error.message : "Noma'lum xato"}`);
@@ -495,7 +500,7 @@ export default function ExpensesPage() {
                    `<b>To'langan:</b> ${formatCurrency(updatedTotals.paidAmount)}\n` +
                    `<b>Nasiya qoldiq:</b> ${formatCurrency(updatedTotals.pendingDebt)}`;
 
-        await sendTelegramNotification(message);
+        await sendTelegramNotification(message, getAuthHeaders);
 
         setIsPaymentDialogOpen(false); setIsNasiyaDialogOpen(false); setPaymentAmount(""); setPaymentDescription(""); setCurrentPaymentSupplier(null);
         } finally {
@@ -554,7 +559,7 @@ export default function ExpensesPage() {
                        `<b>Jami Xarajat:</b> ${formatCurrency(updatedTotals.totalAmount)}\n` +
                        `<b>To'langan:</b> ${formatCurrency(updatedTotals.paidAmount)}\n` +
                        `<b>Nasiya qoldiq:</b> ${formatCurrency(updatedTotals.pendingDebt)}`;
-            await sendTelegramNotification(message);
+            await sendTelegramNotification(message, getAuthHeaders);
 
             for (let i = 0; i < expenseImageFiles.length; i++) {
                 await sendImageToTelegram(expenseImageFiles[i], `Xarajat ID: ${newExpense.id} uchun rasm (${i + 1}/${expenseImageFiles.length})`);
@@ -618,7 +623,7 @@ export default function ExpensesPage() {
                     `<b>Jami Xarajat:</b> ${formatCurrency(updatedTotals.totalAmount)}\n` +
                     `<b>To'langan:</b> ${formatCurrency(updatedTotals.paidAmount)}\n` +
                     `<b>Nasiya qoldiq:</b> ${formatCurrency(updatedTotals.pendingDebt)}`;
-                await sendTelegramNotification(message);
+                await sendTelegramNotification(message, getAuthHeaders);
             }
 
             for (let i = 0; i < expenseImageFiles.length; i++) {
@@ -653,7 +658,7 @@ export default function ExpensesPage() {
                        `<b>To'langan:</b> ${formatCurrency(updatedTotals.paidAmount)}\n` +
                        `<b>Nasiya qoldiq:</b> ${formatCurrency(updatedTotals.pendingDebt)}`;
             
-            await sendTelegramNotification(message);
+            await sendTelegramNotification(message, getAuthHeaders);
         }
 
         toast.success("Xarajat o'chirildi");
@@ -692,7 +697,7 @@ export default function ExpensesPage() {
                               `<b>Kim tomonidan:</b> ${currentUser?.fio || 'Noma`lum'}\n`+
                               `<b>Nomi:</b> ${data.name}`;
                 }
-                if(message) sendTelegramNotification(message);
+                if(message) sendTelegramNotification(message, getAuthHeaders);
                 if (closeFn) closeFn();
                 if (resetFn) resetFn();
             })

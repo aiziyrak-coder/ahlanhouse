@@ -6,6 +6,7 @@ from all.views import (
     SupplierViewSet, ExpenseViewSet, PaymentViewSet, UserPaymentViewSet,
     DocumentViewSet, SupplierPaymentViewSet, CustomTokenObtainPairView,
     RoomTypeModelViewSet, ReportViewSet,
+    TelegramSendMessageView, TelegramSendPhotoView,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 from django.conf import settings
@@ -43,6 +44,8 @@ api_v1 = [
     path('', include(router.urls)),
     path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair_v1'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh_v1'),
+    path('telegram/send-message/', TelegramSendMessageView.as_view(), name='telegram_send_message'),
+    path('telegram/send-photo/', TelegramSendPhotoView.as_view(), name='telegram_send_photo'),
 ]
 
 urlpatterns = [

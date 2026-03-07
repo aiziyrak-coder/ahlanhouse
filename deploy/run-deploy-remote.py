@@ -1,9 +1,27 @@
 #!/usr/bin/env python3
 """SSH orqali serverga ulanish va deploy/pull qilish. Ishlatish: python deploy/run-deploy-remote.py
-Parolni xavfsiz saqlash: set DEPLOY_SSH_PASSWORD=your_password (yoki .env dan o'qishingiz mumkin)"""
+Parolni xavfsiz saqlash: set DEPLOY_SSH_PASSWORD=your_password (yoki .env dan o'qishingiz mumkin)
+TELEGRAM_BOT_TOKEN: ahlanApi/.env da yoki muhitda (serverda Gunicorn uchun yuboriladi)."""
 import os
 import sys
 import paramiko
+
+# Lokal ahlanApi/.env dan TELEGRAM_BOT_TOKEN o'qish (deploy vaqtida serverga yuboriladi)
+def _load_local_env():
+    env_path = os.path.join(os.path.dirname(__file__), "..", "ahlanApi", ".env")
+    if not os.path.isfile(env_path):
+        return
+    with open(env_path, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, _, v = line.partition("=")
+                k, v = k.strip(), v.strip().strip("'\"").strip()
+                if k == "TELEGRAM_BOT_TOKEN" and v:
+                    os.environ.setdefault("TELEGRAM_BOT_TOKEN", v)
+                    break
+
+_load_local_env()
 
 HOST = "64.226.109.56"
 USER = os.environ.get("DEPLOY_SSH_USER", "root")
@@ -66,7 +84,9 @@ def main():
 
         print("\n[4] Gunicorn + PM2 qayta ishga tushirish.")
         run(ssh, f"pkill -f 'gunicorn.*ahlanApi' 2>/dev/null; true", check=False)
-        run(ssh, f"cd {BACKEND} && source venv/bin/activate && nohup gunicorn ahlanApi.wsgi:application --bind 0.0.0.0:8000 --workers 2 --daemon --access-logfile {WWW}/gunicorn-access.log --error-logfile {WWW}/gunicorn-error.log >/dev/null 2>&1 &", check=False)
+        token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").replace("'", "'\"'\"'")
+        export_tg = f"export TELEGRAM_BOT_TOKEN='{token}'; " if token else ""
+        run(ssh, f"cd {BACKEND} && source venv/bin/activate && {export_tg}nohup gunicorn ahlanApi.wsgi:application --bind 0.0.0.0:8000 --workers 2 --daemon --access-logfile {WWW}/gunicorn-access.log --error-logfile {WWW}/gunicorn-error.log >/dev/null 2>&1 &", check=False)
         run(ssh, f"cd {FRONTEND} && (pm2 delete ahlan-house 2>/dev/null; true); pm2 start npm --name ahlan-house -- start", check=False)
         run(ssh, "pm2 save 2>/dev/null; true", check=False)
 

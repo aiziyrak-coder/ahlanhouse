@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
@@ -23,6 +24,7 @@ from django.core.files import File
 import io
 import os
 import zipfile
+import requests
 import shutil
 import tempfile
 from django.conf import settings
@@ -728,3 +730,61 @@ class ReportViewSet(viewsets.GenericViewSet):
         filename = os.path.basename(report.file.name)
         with open(file_path, 'rb') as f:
             return FileResponse(io.BytesIO(f.read()), as_attachment=True, filename=filename)
+
+
+# —— Telegram proxy (CORS va token xavfsizligi: brauzer API ga so'rov, backend Telegram ga) ——
+TELEGRAM_API = "https://api.telegram.org"
+
+class TelegramSendMessageView(APIView):
+    """POST { chat_id, text, parse_mode? } — Telegram sendMessage proxy."""
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [JSONParser]
+
+    def post(self, request):
+        token = getattr(settings, "TELEGRAM_BOT_TOKEN", None) or ""
+        if not token:
+            return Response({"detail": "Telegram bot token sozlanmagan."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        chat_id = request.data.get("chat_id")
+        text = request.data.get("text", "")
+        parse_mode = request.data.get("parse_mode", "HTML")
+        if not chat_id:
+            return Response({"detail": "chat_id kerak."}, status=status.HTTP_400_BAD_REQUEST)
+        url = f"{TELEGRAM_API}/bot{token}/sendMessage"
+        try:
+            r = requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": parse_mode}, timeout=15)
+            try:
+                data = r.json()
+            except Exception:
+                data = {"detail": r.text or f"HTTP {r.status_code}"}
+            return Response(data, status=r.status_code)
+        except requests.RequestException as e:
+            return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+
+class TelegramSendPhotoView(APIView):
+    """POST multipart: chat_id, caption, parse_mode?, photo (file) — Telegram sendPhoto proxy."""
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        token = getattr(settings, "TELEGRAM_BOT_TOKEN", None) or ""
+        if not token:
+            return Response({"detail": "Telegram bot token sozlanmagan."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        chat_id = request.data.get("chat_id")
+        caption = request.data.get("caption", "")
+        parse_mode = request.data.get("parse_mode", "HTML")
+        photo = request.FILES.get("photo")
+        if not chat_id or not photo:
+            return Response({"detail": "chat_id va photo kerak."}, status=status.HTTP_400_BAD_REQUEST)
+        url = f"{TELEGRAM_API}/bot{token}/sendPhoto"
+        try:
+            files = {"photo": (getattr(photo, "name") or "image.jpg", photo, photo.content_type or "image/jpeg")}
+            data = {"chat_id": chat_id, "caption": caption, "parse_mode": parse_mode}
+            r = requests.post(url, data=data, files=files, timeout=30)
+            try:
+                resp_data = r.json()
+            except Exception:
+                resp_data = {"detail": r.text or f"HTTP {r.status_code}"}
+            return Response(resp_data, status=r.status_code)
+        except requests.RequestException as e:
+            return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
