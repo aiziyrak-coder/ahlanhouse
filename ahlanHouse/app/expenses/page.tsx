@@ -415,10 +415,11 @@ export default function ExpensesPage() {
         return true;
     };
     
-    /** Rasmni Telegramga backend proxy orqali (CORS va token xavfsizligi). */
+    /** Rasmni Telegramga backend proxy orqali (CORS va token xavfsizligi). FormData uchun Content-Type ni o'rnatmaymiz — brauzer multipart/form-data + boundary qo'yadi. */
     const sendImageToTelegram = async (imageFile: File, caption: string) => {
-        const headers = getAuthHeaders();
-        if (!headers) return;
+        const authHeaders = getAuthHeaders() as Record<string, string>;
+        if (!authHeaders?.Authorization) return;
+        const { "Content-Type": _ct, ...headers } = authHeaders;
         const formData = new FormData();
         formData.append("chat_id", TELEGRAM_CHAT_ID);
         formData.append("photo", imageFile, imageFile.name || "image.jpg");

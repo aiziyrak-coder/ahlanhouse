@@ -72,7 +72,6 @@ ChartJS.register(
 // API & Telegram Constants
 import { getApiBaseUrl, getApiRoot } from "@/app/lib/api";
 const API_BASE_URL = getApiBaseUrl();
-const TELEGRAM_BOT_TOKEN = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || "";
 const TELEGRAM_CHAT_ID = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID || "-1003733316489";
 
 // --- Helper Components ---
@@ -427,21 +426,22 @@ export default function ApartmentDetailPage() {
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
 
   const sendTelegramNotification = useCallback(async (message: string) => {
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+    const headers = getAuthHeaders();
+    if (!headers || !TELEGRAM_CHAT_ID) return;
     try {
-      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      const res = await fetch(`${API_BASE_URL}/telegram/send-message/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: "HTML",
-        }),
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: "HTML" }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { detail?: string }).detail || res.statusText);
+      }
     } catch (error) {
       console.error("Telegram xabarini yuborishda xatolik:", error);
     }
-  }, []);
+  }, [getAuthHeaders]);
 
   const getAuthHeaders = useCallback(
     (token = accessToken) => {

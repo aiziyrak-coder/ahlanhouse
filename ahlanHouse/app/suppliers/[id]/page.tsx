@@ -14,7 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { getApiBaseUrl } from "@/app/lib/api";
 const API_BASE_URL = getApiBaseUrl();
-const TELEGRAM_BOT_TOKEN = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || "";
 const TELEGRAM_CHAT_ID = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID || "-1003733316489";
 
 
@@ -52,17 +51,22 @@ const SupplierDetailPage = () => {
   });
 
   const sendTelegramNotification = useCallback(async (message: string) => {
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+    const headers = getAuthHeaders();
+    if (!headers || !(headers as Record<string, string>)["Authorization"] || !TELEGRAM_CHAT_ID) return;
     try {
-      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' })
+      const res = await fetch(`${API_BASE_URL}/telegram/send-message/`, {
+        method: "POST",
+        headers: { ...(headers as Record<string, string>), "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: "HTML" }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { detail?: string }).detail || res.statusText);
+      }
     } catch (error) {
       console.error("Telegram xabarini yuborishda xatolik:", error);
     }
-  }, []);
+  }, [getAuthHeaders]);
 
   const getAuthHeaders = useCallback(() => {
     if (!accessToken) {
