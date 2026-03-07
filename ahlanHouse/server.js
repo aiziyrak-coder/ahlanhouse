@@ -1,85 +1,75 @@
-import { startDailyReportScheduler, createReportMessage } from './app/lib/telegram/index.js';
+/**
+ * Custom Next.js server: /_next/static/* diskdan xizmat qiladi, fayl yo'q bo'lsa 404 (500 emas).
+ * ChunkLoadError va deploy keyin eski chunk so'rovlari 404 qaytadi, brauzer yangilash ishlaydi.
+ */
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
+const { parse } = require("url");
+const next = require("next");
 
-// Server ishga tushgandan keyin Telegram xabarlarini yuborishni ishga tushirish
-startDailyReportScheduler();
+const port = parseInt(process.env.PORT || "3000", 10);
+const dev = process.env.NODE_ENV !== "production";
+const app = next({ dev });
+const handle = app.getRequestHandler();
 
-// Server ishga tushgandan keyin test uchun xabar yuborish
-console.log('\n=== SERVER STARTED ===');
-console.log('Telegram xabarlarini yuborish ishga tushdi');
-console.log('Konsolga chiqariladigan xabarlar:');
-
-// Har kuni 12:00 soatda ma'lumotlarni olib xabar yuborish
-const scheduleDailyReport = () => {
-  const now = new Date();
-  const nextReportTime = new Date(now);
-  
-  // Agar hozirgi vaqt 12:00 dan keyin bo'lsa, keyingi kuni 12:00 soatda ishga tushirish
-  if (now.getHours() >= 12) {
-    nextReportTime.setDate(nextReportTime.getDate() + 1);
-  }
-  
-  nextReportTime.setHours(12, 0, 0, 0);
-  
-  const millisecondsUntilNextReport = nextReportTime.getTime() - now.getTime();
-  
-  // 12:00 soatda ma'lumotlarni olib xabar yuborish
-  setTimeout(async () => {
-    try {
-      const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.ahlan.uz/api/v1').replace(/\/$/, '');
-      // API ma'lumotlarini olish (backend da mavjud endpointlar ishlatiladi)
-      const [debtors, apartments, payments, expenses] = await Promise.all([
-        fetch(`${apiBase}/user-payments/?page_size=1`).catch(() => ({ ok: false, json: () => ({ count: 0 }) })),
-        fetch(`${apiBase}/apartments/?page_size=1`).catch(() => ({ ok: false, json: () => ({ results: [] }) })),
-        fetch(`${apiBase}/payments/statistics/`).catch(() => ({ ok: false, json: () => ({}) })),
-        fetch(`${apiBase}/expenses/?page_size=1`).catch(() => ({ ok: false, json: () => ({ results: [] }) }))
-      ]);
-
-      const [debtorsData, apartmentsData, paymentsData, expensesData] = await Promise.all([
-        debtors.ok ? debtors.json() : { count: 0 },
-        apartments.ok ? apartments.json() : { results: [] },
-        payments.ok ? payments.json() : {},
-        expenses.ok ? expenses.json() : { results: [] }
-      ]);
-
-      // API ma'lumotlarini konsolga chiqarish
-      console.log('\n=== DAILY REPORT ===');
-      console.log('=== API DATA ===');
-      console.log('Debtors:', debtorsData);
-      console.log('Apartments:', apartmentsData);
-      console.log('Payments:', paymentsData);
-      console.log('Expenses:', expensesData);
-
-      const reportData = {
-        debtors: debtorsData,
-        apartments: apartmentsData,
-        payments: paymentsData,
-        expenses: expensesData
-      };
-      
-      const reportMessage = createReportMessage(reportData);
-      
-      // Xabarni konsolga chiqarish
-      console.log('\n=== FINAL DAILY REPORT ===');
-      console.log(reportMessage);
-      console.log('=======================\n');
-      
-      // Keyingi kuni 12:00 soatda qayta ishga tushirish
-      scheduleDailyReport();
-      
-    } catch (error) {
-      console.error('Xatolik yuz berdi:', error);
-      // Agar xatolik yuz bersa, keyingi kuni 12:00 soatda qayta ishga tushirish
-      scheduleDailyReport();
-    }
-  }, millisecondsUntilNextReport);
+const MIMES = {
+  ".js": "application/javascript",
+  ".css": "text/css",
+  ".map": "application/json",
+  ".woff2": "font/woff2",
+  ".woff": "font/woff",
+  ".ttf": "font/ttf",
+  ".eot": "application/vnd.ms-fontobject",
+  ".ico": "image/x-icon",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".json": "application/json",
 };
 
-// Server ishga tushgandan keyin 12:00 soatda ishga tushirish
-scheduleDailyReport();
+function serveStatic(req, res, urlPath) {
+  const base = path.join(__dirname, ".next", "static");
+  const subPath = urlPath.replace(/^\/_next\/static\//, "").replace(/\?.*$/, "");
+  if (!subPath || subPath.includes("..")) {
+    res.writeHead(404);
+    res.end();
+    return;
+  }
+  const filePath = path.join(base, subPath);
+  const resolved = path.resolve(filePath);
+  if (!resolved.startsWith(path.resolve(base))) {
+    res.writeHead(404);
+    res.end();
+    return;
+  }
+  fs.access(resolved, fs.constants.R_OK, (err) => {
+    if (err) {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+    const ext = path.extname(resolved);
+    const type = MIMES[ext] || "application/octet-stream";
+    res.setHeader("Content-Type", type);
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    fs.createReadStream(resolved).pipe(res);
+  });
+}
 
-// Server ishga tushgandan keyin qo'shimcha xabarlar
-const telegramToken = process.env.TELEGRAM_BOT_TOKEN || process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
-const telegramChatIds = (process.env.TELEGRAM_CHAT_ID || process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID || '-1003733316489').split(',').map((id) => id.trim()).filter(Boolean);
-console.log('\n=== SERVER CONFIGURATION ===');
-console.log('Telegram configured:', !!telegramToken, 'Chat IDs count:', telegramChatIds.length);
-console.log('==========================\n');
+app.prepare().then(() => {
+  http
+    .createServer((req, res) => {
+      const parsedUrl = parse(req.url || "/", true);
+      const pathname = parsedUrl.pathname || "/";
+      if (req.method === "GET" && pathname.startsWith("/_next/static/")) {
+        serveStatic(req, res, pathname);
+        return;
+      }
+      handle(req, res, parsedUrl);
+    })
+    .listen(port, () => {
+      console.log(`> Ready on http://localhost:${port}`);
+    });
+});
