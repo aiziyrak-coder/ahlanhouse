@@ -23,22 +23,24 @@ class ObjectSerializer(serializers.ModelSerializer):
         return None
 
     def get_apartment_stats(self, obj):
-        """Obyekt bo'yicha xonadonlar soni statuslar kesimida. Barcha statuslar yig'indisi = ro'yxatdagi xonadonlar soni."""
+        """Obyekt bo'yicha xonadonlar. Barcha statuslar + ro'yxatda_yo'q yig'indisi = total_apartments (40)."""
+        total = getattr(obj, 'total_apartments', 0) or 0
         qs = obj.apartments.all()
         bosh = qs.filter(status='bosh').count()
         band = qs.filter(status='band').count()
-        # Sotilgan: rasman sotilgan yoki to'liq to'langan (balans >= narx)
         sotilgan = qs.filter(Q(status='sotilgan') | (Q(status='muddatli') & Q(balance__gte=F('price')))).count()
-        # Muddatli (balance < price): qarzdor = muddati o'tgan to'lovi bor, muddatli = qolgani
         muddatli_qs = qs.filter(status='muddatli', balance__lt=F('price'))
         qarzdor = muddatli_qs.filter(payments__status='overdue').distinct().count()
         muddatli = muddatli_qs.count() - qarzdor
+        # Ro'yxatda yo'q = obyektda jami 40 ta, lekin tizimda yozuvi borlarining qolgani
+        royxatda_yoq = max(0, int(total) - (bosh + band + muddatli + qarzdor + sotilgan))
         return {
             'bosh': bosh,
             'band': band,
             'muddatli': muddatli,
             'qarzdor': qarzdor,
             'sotilgan': sotilgan,
+            'royxatda_yoq': royxatda_yoq,
         }
 
 class ApartmentSerializer(serializers.ModelSerializer):

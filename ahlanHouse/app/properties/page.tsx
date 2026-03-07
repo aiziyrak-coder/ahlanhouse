@@ -51,19 +51,20 @@ const handleApiError = (error, response, router) => {
   return false;
 };
 
-// Xonadon statuslari bo'yicha statistikalar (obyekt kartasida). Tartib: bosh, band, muddatli, qarzdor, sotilgan
+// Xonadon statuslari. Barcha qatorlar yig'indisi = object.total_apartments (40)
 const APARTMENT_STATUS_LABELS = {
   bosh: { label: "Bo'sh", color: "bg-emerald-100 text-emerald-800" },
   band: { label: "Band qilingan", color: "bg-amber-100 text-amber-800" },
   muddatli: { label: "Muddatli", color: "bg-blue-100 text-blue-800" },
   qarzdor: { label: "Qarzdor", color: "bg-red-100 text-red-800" },
   sotilgan: { label: "Sotilgan", color: "bg-slate-200 text-slate-800" },
+  royxatda_yoq: { label: "Ro'yxatda yo'q", color: "bg-gray-100 text-gray-600" },
 };
 
 // Obyekt kartasi komponenti
 const ObjectCard = ({ object, onEdit, onDelete, canPerformActions }) => {
-  const stats = object.apartment_stats || { bosh: 0, band: 0, muddatli: 0, qarzdor: 0, sotilgan: 0 };
-  const statsSum = (stats.bosh ?? 0) + (stats.band ?? 0) + (stats.muddatli ?? 0) + (stats.qarzdor ?? 0) + (stats.sotilgan ?? 0);
+  const stats = object.apartment_stats || { bosh: 0, band: 0, muddatli: 0, qarzdor: 0, sotilgan: 0, royxatda_yoq: 0 };
+  const totalApartments = Number(object.total_apartments) ?? 0;
 
   return (
     <Card className="transition-all duration-200 flex flex-col">
@@ -107,9 +108,9 @@ const ObjectCard = ({ object, onEdit, onDelete, canPerformActions }) => {
                   {label}: {stats[key] ?? 0}
                 </div>
               ))}
-              {/* Umumiy = barcha statuslar yig'indisi (ro'yxatdagi xonadonlar soni) */}
+              {/* Umumiy = obyektda jami xonadonlar (40), barcha statuslar yig'indisi shunga teng */}
               <div className="col-span-2 rounded px-2 py-1.5 text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
-                Umumiy (jami): {statsSum} ta xonadon
+                Umumiy (jami): {totalApartments} ta xonadon
               </div>
             </div>
           </div>
