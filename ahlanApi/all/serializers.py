@@ -177,6 +177,18 @@ class SupplierSerializer(serializers.ModelSerializer):
     def get_balance_details(self, obj):
         return obj.get_balance_details()
 
+def _normalize_expense_status(value):
+    """Frontend ASCII apostrophe va backend Unicode apostrofini birlashtiradi."""
+    if not value or not isinstance(value, str):
+        return value
+    v = value.strip().replace('\u2019', "'").replace('\u0027', "'")
+    if v in ("To'langan", "To'langan"):
+        return Expense.STATUS_CHOICES[0][0]
+    if v == "Kutilmoqda":
+        return Expense.STATUS_CHOICES[1][0]
+    return value
+
+
 class ExpenseSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source='supplier.company_name', read_only=True)
     expense_type_name = serializers.CharField(source='expense_type.name', read_only=True)
@@ -187,6 +199,12 @@ class ExpenseSerializer(serializers.ModelSerializer):
             'id', 'amount', 'date', 'supplier', 'supplier_name', 'comment', 'expense_type',
             'expense_type_name', 'object', 'status', 'image'
         ]
+
+    def to_internal_value(self, data):
+        data = super().to_internal_value(data)
+        if 'status' in data and data.get('status'):
+            data['status'] = _normalize_expense_status(data['status'])
+        return data
 
 class DocumentSerializer(serializers.ModelSerializer):
     class Meta:

@@ -795,7 +795,6 @@ const SuppliersPage = () => {
           </DialogContent>
         </Dialog>
       </main>
-      <footer className="border-t py-4 text-center text-sm text-muted-foreground mt-auto bg-background"><div className="container mx-auto">Version 1.1 | Ahlan Group LLC © {new Date().getFullYear()}</div></footer>
     </div>
   );
 };

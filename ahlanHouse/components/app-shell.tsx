@@ -21,6 +21,7 @@ import { LiveWeather } from "@/components/live-weather";
 import { LiveDateTime } from "@/components/live-date-time";
 import { Toaster } from "@/components/ui/toaster";
 import { Ziyrak } from "@/components/ziyrak";
+import { AppFooter } from "@/components/app-footer";
 
 const routes = [
   { href: "/", label: "Bosh sahifa", icon: LayoutDashboard },
@@ -63,9 +64,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main content — full width, padding above dock */}
-      <main id="main-content" className="content-area flex-1 overflow-auto p-6 pb-28" tabIndex={-1}>
+      <main id="main-content" className="content-area flex-1 overflow-auto p-6 pb-6" tabIndex={-1}>
         <div className="app-page">{children}</div>
       </main>
+
+      {/* Footer — ingichka, alohida, hech narsa ustiga tushmasin */}
+      <div className="flex-shrink-0 mb-20">
+        <AppFooter />
+      </div>
 
       {/* Bottom dock — macOS style, animated */}
       <nav

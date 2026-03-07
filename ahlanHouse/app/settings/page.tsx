@@ -414,8 +414,11 @@ export default function SettingsPage() {
         <Card className="mt-8">
           <CardHeader>
             <CardTitle className="text-base">Dastur haqida</CardTitle>
-            <CardDescription>
-              Version 1.0 | Barcha huquqlar himoyalangan. CDCGroup · CraDev Company. 2019 yildan beri
+            <CardDescription className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+              Version 1.1 | Ahlan Group LLC © 2026. Ishlab chiqaruvchi:{" "}
+              <a href="https://cdcgroup.uz" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:no-underline">CDCGroup</a>
+              {" · "}Qo&apos;llab-quvvatlovchi:{" "}
+              <a href="https://cdcgroup.uz" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:no-underline">CraDev Company</a>
             </CardDescription>
           </CardHeader>
         </Card>

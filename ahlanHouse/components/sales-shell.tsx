@@ -15,6 +15,7 @@ import {
   Glasses,
 } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
+import { AppFooter } from "@/components/app-footer";
 
 const salesRoutes = [
   { href: "/sotuv", label: "Bosh sahifa", icon: LayoutDashboard },
@@ -73,9 +74,13 @@ export function SalesShell({ children }: { children: React.ReactNode }) {
         </button>
       </header>
 
-      <main id="main-content" className="flex-1 overflow-auto p-6 pb-28" tabIndex={-1}>
+      <main id="main-content" className="flex-1 overflow-auto p-6 pb-6" tabIndex={-1}>
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
+
+      <div className="flex-shrink-0 mb-20">
+        <AppFooter />
+      </div>
 
       <nav className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2" aria-label="Sotuv menyu">
         <div className="flex items-end gap-1 rounded-2xl border border-emerald-200/50 bg-white/90 px-2 py-2 shadow-xl shadow-emerald-500/10 backdrop-blur-xl dark:border-emerald-800/30 dark:bg-slate-900/90">

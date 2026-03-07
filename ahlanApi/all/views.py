@@ -424,13 +424,8 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     filterset_fields = ['date', 'supplier', 'expense_type', 'object', 'status']
-    ordering_fields = ['date', 'id']  # Sana va ID bo'yicha tartiblashga ruxsat
+    ordering_fields = ['date', 'id']
     ordering = ['-date', '-id']
-
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAdminUser()]
-        return [permissions.IsAuthenticated()]
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all().order_by("-created_at")
