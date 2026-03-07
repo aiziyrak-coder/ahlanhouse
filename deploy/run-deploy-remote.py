@@ -80,14 +80,14 @@ def main():
 
         print("\n[3] Frontend (Next.js).")
         run(ssh, f"cd {FRONTEND} && npm install --legacy-peer-deps", check=True)
-        run(ssh, f"cd {FRONTEND} && rm -rf .next && npm run build")
+        run(ssh, f"cd {FRONTEND} && rm -rf .next node_modules/.cache && npm run build")
 
         print("\n[4] Gunicorn + PM2 qayta ishga tushirish.")
         run(ssh, f"pkill -f 'gunicorn.*ahlanApi' 2>/dev/null; true", check=False)
         token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").replace("'", "'\"'\"'")
         export_tg = f"export TELEGRAM_BOT_TOKEN='{token}'; " if token else ""
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && {export_tg}nohup gunicorn ahlanApi.wsgi:application --bind 0.0.0.0:8000 --workers 2 --daemon --access-logfile {WWW}/gunicorn-access.log --error-logfile {WWW}/gunicorn-error.log >/dev/null 2>&1 &", check=False)
-        run(ssh, f"cd {FRONTEND} && (pm2 delete ahlan-house 2>/dev/null; true); pm2 start npm --name ahlan-house -- start", check=False)
+        run(ssh, f"cd {FRONTEND} && (pm2 delete ahlan-house 2>/dev/null; true); sleep 1; pm2 start npm --name ahlan-house -- start", check=False)
         run(ssh, "pm2 save 2>/dev/null; true", check=False)
 
         print("\n[5] Nginx api.ahlan.uz (static path).")
