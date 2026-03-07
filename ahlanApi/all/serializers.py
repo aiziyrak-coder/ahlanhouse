@@ -217,11 +217,12 @@ class ExpenseSerializer(serializers.ModelSerializer):
             val = data['image']
             if val is None or (isinstance(val, str) and not (val or '').strip()):
                 data.pop('image', None)
-        if not data.get('status') or (isinstance(data.get('status'), str) and not data.get('status', '').strip()):
-            data['status'] = 'Kutilmoqda'
-        data = super().to_internal_value(data)
-        if data.get('status'):
+        # Normalize status BEFORE ChoiceField validation (frontend sends ASCII apostrophe)
+        if data.get('status') and isinstance(data.get('status'), str):
             data['status'] = _normalize_expense_status(data['status'])
+        elif not data.get('status') or (isinstance(data.get('status'), str) and not (data.get('status') or '').strip()):
+            data['status'] = Expense.STATUS_CHOICES[1][0]  # Kutilmoqda
+        data = super().to_internal_value(data)
         return data
 
     def validate_amount(self, value):
