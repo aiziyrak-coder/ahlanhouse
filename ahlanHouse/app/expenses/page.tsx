@@ -521,7 +521,17 @@ export default function ExpensesPage() {
             const headers: HeadersInit = { Authorization: `Bearer ${accessToken}` };
             const res = await fetch(`${API_BASE_URL}/expenses/`, { method: "POST", headers, body: formPayload });
             if (res.status === 401) { clearAuthAndRedirect(router); return; }
-            if (!res.ok) throw new Error("Xarajat qo'shilmadi");
+            if (!res.ok) {
+                const errBody = await res.json().catch(() => ({}));
+                const msg = errBody && typeof errBody === "object"
+                    ? (Array.isArray(errBody)
+                        ? errBody.join(", ")
+                        : Object.entries(errBody)
+                            .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`)
+                            .join("; "))
+                    : res.statusText;
+                throw new Error(msg || "Xarajat qo'shilmadi");
+            }
             const newExpense = await res.json();
             toast.success("Xarajat muvaffaqiyatli qo'shildi");
 
@@ -532,12 +542,12 @@ export default function ExpensesPage() {
             const expenseTypeName = expenseTypes.find(t => t.id === Number(formData.expense_type))?.name;
             let message = `<b>➕ Yangi Xarajat Qo'shildi</b>\n\n` +
                             `<b>Kim tomonidan:</b> ${currentUser?.fio || "Noma'lum"}\n` +
-                            `<b>Obyekt:</b> ${objectName || 'N/A'}\n`+
-                            `<b>Yetkazib beruvchi:</b> ${supplierName || 'N/A'}\n`+
-                            `<b>Xarajat turi:</b> ${expenseTypeName || 'N/A'}\n\n`+
+                            `<b>Obyekt:</b> ${objectName || '—'}\n`+
+                            `<b>Yetkazib beruvchi:</b> ${supplierName || '—'}\n`+
+                            `<b>Xarajat turi:</b> ${expenseTypeName || '—'}\n\n`+
                             `<b>Summa:</b> ${formatCurrency(formData.amount)}\n`+
                             `<b>Sana:</b> ${formatDate(formData.date)}\n`+
-                            `<b>Status:</b> ${formData.status}\n`+
+                            `<b>Holat:</b> ${formData.status}\n`+
                             `<b>Izoh:</b> ${formData.comment}`;
             message += `\n\n➖➖➖➖➖\n` +
                        `<b>📊 Umumiy Holat:</b>\n` +
@@ -573,7 +583,17 @@ export default function ExpensesPage() {
             const headers: HeadersInit = { Authorization: `Bearer ${accessToken}` };
             const res = await fetch(`${API_BASE_URL}/expenses/${id}/`, { method: "PATCH", headers, body: formPayload });
             if (res.status === 401) { clearAuthAndRedirect(router); return; }
-            if (!res.ok) throw new Error("Xarajat yangilanmadi");
+            if (!res.ok) {
+                const errBody = await res.json().catch(() => ({}));
+                const msg = errBody && typeof errBody === "object"
+                    ? (Array.isArray(errBody)
+                        ? errBody.join(", ")
+                        : Object.entries(errBody)
+                            .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`)
+                            .join("; "))
+                    : res.statusText;
+                throw new Error(msg || "Xarajat yangilanmadi");
+            }
             await res.json();
             toast.success("Xarajat muvaffaqiyatli yangilandi");
 
@@ -587,7 +607,7 @@ export default function ExpensesPage() {
             if (currentExpense.date !== dataToSend.date) changes.push(`• <b>Sana:</b> <code>${formatDate(currentExpense.date)}</code> → <code>${formatDate(dataToSend.date)}</code>`);
             if (currentExpense.comment !== dataToSend.comment) changes.push(`• <b>Izoh:</b> <code>${currentExpense.comment}</code> → <code>${dataToSend.comment}</code>`);
             const oldStatus = currentExpense.status === "To'langan" ? "Naqd pul" : "Nasiya";
-            if (oldStatus !== formData.status) changes.push(`• <b>Status:</b> <code>${oldStatus}</code> → <code>${formData.status}</code>`);
+            if (oldStatus !== formData.status) changes.push(`• <b>Holat:</b> <code>${oldStatus}</code> → <code>${formData.status}</code>`);
 
             if (changes.length > 0) {
                 let message = `<b>✏️ Xarajat Tahrirlandi (ID: ${id})</b>\n\n` +
@@ -878,7 +898,7 @@ export default function ExpensesPage() {
                                 <TableHead className="cursor-pointer" onClick={() => handleSort('supplier_name')}>Yetkazib beruvchi {tableSortKey === 'supplier_name' && <ArrowUpDown className="ml-2 h-4 w-4 inline-block opacity-50" />}</TableHead>
                                 <TableHead>Izoh</TableHead>
                                 <TableHead className="cursor-pointer" onClick={() => handleSort('expense_type_name')}>Turi {tableSortKey === 'expense_type_name' && <ArrowUpDown className="ml-2 h-4 w-4 inline-block opacity-50" />}</TableHead>
-                                <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>Status {tableSortKey === 'status' && <ArrowUpDown className="ml-2 h-4 w-4 inline-block opacity-50" />}</TableHead>
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>Holat {tableSortKey === 'status' && <ArrowUpDown className="ml-2 h-4 w-4 inline-block opacity-50" />}</TableHead>
                                 <TableHead className="cursor-pointer text-right" onClick={() => handleSort('amount')}>Summa {tableSortKey === 'amount' && <ArrowUpDown className="ml-2 h-4 w-4 inline-block opacity-50" />}</TableHead>
                                 <TableHead>Rasm</TableHead>
                                 {canPerformSensitiveActions(currentUser) && <TableHead className="text-right">Amallar</TableHead>}

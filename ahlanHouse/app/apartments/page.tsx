@@ -599,7 +599,7 @@ export default function ApartmentsPage() {
                         <TableCell>{apartment.area}</TableCell>
                         <TableCell className="text-right">{formatCurrency(displayTotalAmount)}</TableCell>
                         <TableCell>{getStatusBadge(apartment.status, apartment.payment?.payment_type)}</TableCell>
-                        <TableCell>{apartment.payment ? getPaymentTypeLabel(apartment.payment.payment_type) : isBosh ? '-' : 'N/A'}</TableCell>
+                        <TableCell>{apartment.payment ? getPaymentTypeLabel(apartment.payment.payment_type) : isBosh ? '–' : '—'}</TableCell>
                         <TableCell className={`text-right ${remainingAmount !== null && remainingAmount < 0 ? 'text-orange-600' : remainingAmount !== null && remainingAmount > 0 ? 'text-red-600' : ''}`}>{isBosh || remainingAmount === null ? '-' : formatCurrency(remainingAmount)}</TableCell>
                         {showSensitiveControls && (
                           <TableCell className="text-right">
@@ -812,7 +812,7 @@ export default function ApartmentsPage() {
                 return (
                   <Card key={apartment.id} className="overflow-hidden transition-shadow cursor-pointer apartment-card-height flex flex-col" onClick={() => router.push(`/apartments/${apartment.id}`)}>
                     <CardContent className="p-4 space-y-2 flex flex-col h-full min-h-0">
-                      <div className="flex justify-between items-start mb-2 shrink-0"><div className="min-w-0"><h3 className="text-lg font-semibold truncate">№ {apartment.room_number || "N/A"}</h3><p className="text-xs text-muted-foreground truncate" title={apartment.object_name}>{apartment.object_name}</p></div>{getStatusBadge(apartment.status, apartment.payment?.payment_type)}</div>
+                      <div className="flex justify-between items-start mb-2 shrink-0"><div className="min-w-0"><h3 className="text-lg font-semibold truncate">№ {apartment.room_number || "—"}</h3><p className="text-xs text-muted-foreground truncate" title={apartment.object_name}>{apartment.object_name}</p></div>{getStatusBadge(apartment.status, apartment.payment?.payment_type)}</div>
                       <div className="space-y-2 text-sm text-foreground flex-1 min-h-0 overflow-hidden flex flex-col">
                         <div className="flex items-center shrink-0"><Home className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" /><span className="truncate">{apartment.rooms} xona, {apartment.area} m², {apartment.floor}-qavat</span></div>
                         {!isBosh && apartment.calculatedRemaining !== null && (

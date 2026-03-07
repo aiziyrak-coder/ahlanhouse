@@ -192,6 +192,7 @@ def _normalize_expense_status(value):
 class ExpenseSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source='supplier.company_name', read_only=True)
     expense_type_name = serializers.CharField(source='expense_type.name', read_only=True)
+    status = serializers.ChoiceField(choices=Expense.STATUS_CHOICES, default='Kutilmoqda', required=False)
 
     class Meta:
         model = Expense
@@ -199,12 +200,34 @@ class ExpenseSerializer(serializers.ModelSerializer):
             'id', 'amount', 'date', 'supplier', 'supplier_name', 'comment', 'expense_type',
             'expense_type_name', 'object', 'status', 'image'
         ]
+        extra_kwargs = {
+            'comment': {'allow_blank': False},
+            'image': {'required': False, 'allow_null': True},
+        }
 
     def to_internal_value(self, data):
+        # FormData/MultiPart: make mutable copy; treat empty image as absent
+        if hasattr(data, 'items'):
+            data = dict(data.items())
+        elif isinstance(data, dict):
+            data = dict(data)
+        else:
+            data = dict(data) if data else {}
+        if 'image' in data:
+            val = data['image']
+            if val is None or (isinstance(val, str) and not (val or '').strip()):
+                data.pop('image', None)
+        if not data.get('status') or (isinstance(data.get('status'), str) and not data.get('status', '').strip()):
+            data['status'] = 'Kutilmoqda'
         data = super().to_internal_value(data)
-        if 'status' in data and data.get('status'):
+        if data.get('status'):
             data['status'] = _normalize_expense_status(data['status'])
         return data
+
+    def validate_amount(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError("Summa musbat bo'lishi kerak.")
+        return value
 
 class DocumentSerializer(serializers.ModelSerializer):
     class Meta:

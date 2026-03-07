@@ -284,7 +284,7 @@ const SuppliersPage = () => {
   
   const formatBalance = (balance: string | number | null | undefined) => {
     const balanceNum = parseFloat(String(balance ?? 0));
-    if (isNaN(balanceNum)) return <span className="text-muted-foreground">N/A</span>;
+    if (isNaN(balanceNum)) return <span className="text-muted-foreground">—</span>;
     const formatter = new Intl.NumberFormat('en-US', { 
       style: 'currency', 
       currency: 'USD', 
@@ -521,7 +521,7 @@ const SuppliersPage = () => {
   
   // --- YANGI: Obyekt nomini ID orqali topish funksiyasi ---
   const getObyektName = (obyektId: number | undefined | null): string => {
-    if (obyektId === undefined || obyektId === null) return "N/A";
+    if (obyektId === undefined || obyektId === null) return "—";
     return obyekts.find(obj => obj.id === obyektId)?.name || `ID: ${obyektId}`;
   };
 

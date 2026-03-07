@@ -392,7 +392,7 @@ export default function ReserveApartmentPage() {
     }
     const endDateString = paymentType === "muddatli" && Number(formData.totalMonths) > 0
       ? endDate.toLocaleDateString("uz-UZ")
-      : "N/A";
+      : "—";
     const paymentSchedule = generatePaymentSchedule();
     const bandDateString = bandDate ? bandDate.toLocaleDateString("uz-UZ") : "Noma'lum";
     const paymentDateString = paymentDate ? paymentDate.toLocaleDateString("uz-UZ") : currentDate;
@@ -417,7 +417,7 @@ export default function ReserveApartmentPage() {
    «Бажарувчи»га ариза орқали мурожаат этгандан сўнг, Ўзбекистон
    Республикаси, Фарғона вилояти, Қўқон шаҳар,
    ${apartment.object_name || "Номаълум Обиект"} да жойлашган
-   ${apartment.floor || "N/A"}-қаватли ${apartment.room_number || "N/A"}-хонадонли (${apartment.rooms || "?"} хонали,
+   ${apartment.floor || "—"}-қаватли ${apartment.room_number || "—"}-хонадонли (${apartment.rooms || "?"} хонали,
    умумий майдони ${apartment.area || "?"} кв.м) турар-жой биносини қуришга, буюртмачи
    вазифасини бажариш тўғрисида шартномани (кейинги ўринларда - асосий
    шартнома) тузиш мажбуриятини ўз зиммаларига оладилар.
@@ -426,7 +426,7 @@ export default function ReserveApartmentPage() {
 
 1. Томонлар қуйидагиларни асосий шартноманинг муҳим шартлари деб
    ҳисоблашга келишиб оладилар:
-   а) «Буюртмачи»га топшириладиган ${apartment.room_number || "N/A"}-хонадоннинг умумий
+   а) «Буюртмачи»га топшириладиган ${apartment.room_number || "—"}-хонадоннинг умумий
       қийматининг бошланғич нархи ${formattedPrice} (${priceWords}) сўмни
       ташкил этади ва ушбу нарх томонлар томонидан келишилган ҳолда
       ${paymentType === "naqd" || paymentType === "band" ? "ўзгармайди" : "ўзгариши мумкин"};
@@ -1216,11 +1216,11 @@ _________________________                   _________________________
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <p><strong>Obyekt:</strong> {apartment?.object_name || "Noma'lum"}</p>
-                <p><strong>Xona raqami:</strong> {apartment?.room_number || "N/A"}</p>
-                <p><strong>Xonalar soni:</strong> {apartment?.rooms || "N/A"}</p>
-                <p><strong>Qavat:</strong> {apartment?.floor || "N/A"}</p>
-                <p><strong>Maydon:</strong> {apartment?.area || "N/A"} kv.m</p>
-                <p><strong>Status:</strong> {apartment?.status_display || apartment?.status || "N/A"}</p>
+                <p><strong>Xona raqami:</strong> {apartment?.room_number || "—"}</p>
+                <p><strong>Xonalar soni:</strong> {apartment?.rooms || "—"}</p>
+                <p><strong>Qavat:</strong> {apartment?.floor || "—"}</p>
+                <p><strong>Maydon:</strong> {apartment?.area || "—"} kv.m</p>
+                <p><strong>Holat:</strong> {apartment?.status_display || apartment?.status || "—"}</p>
               </CardContent>
             </Card>
             <Card>
@@ -1240,7 +1240,7 @@ _________________________                   _________________________
                     <p><strong>Qolgan foiz:</strong> {calculateRemainingPercentage()}%</p>
                     <p><strong>Oylik to'lov:</strong> {formatCurrency(calculateMonthlyPayment())}</p>
                     <p><strong>Muddat:</strong> {formData.totalMonths || "0"} oy</p>
-                    <p><strong>Har oyning to'lov sanasi:</strong> {formData.due_date || "N/A"}</p>
+                    <p><strong>Har oyning to'lov sanasi:</strong> {formData.due_date || "—"}</p>
                   </>
                 )}
               </CardContent>

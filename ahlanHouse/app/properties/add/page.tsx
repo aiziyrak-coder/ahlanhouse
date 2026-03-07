@@ -97,7 +97,7 @@ export default function AddPropertyPage() {
         if (response.status === 401) {
           throw new Error("Sessiya tugagan, qayta kirish kerak");
         }
-        throw new Error(errorData.message || errorData.detail || `Obyekt qo'shishda xatolik (Status: ${response.status})`);
+        throw new Error(errorData.message || errorData.detail || `Obyekt qo'shishda xatolik (HTTP: ${response.status})`);
       }
 
       await response.json();
