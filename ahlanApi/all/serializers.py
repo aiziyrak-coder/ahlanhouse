@@ -6,6 +6,30 @@ from decimal import Decimal
 from .models import Object, Apartment, User, ExpenseType, Supplier, Expense, Payment, Document, UserPayment, SupplierPayment, RoomTypeModel, OrganizationReport
 
 
+def get_apartment_stats_for_queryset(queryset):
+    """
+    Berilgan Apartment queryset bo'yicha statistikani hisoblaydi (filtrlangan ro'yxat uchun).
+    Qaytaradi: { total, bosh, band, sotilgan } — xonadonlar ro'yxatidan kelib chiqqan.
+    """
+    qs = queryset.annotate(
+        total_paid=Coalesce(Sum('payments__paid_amount'), Value(Decimal('0')))
+    )
+    sold_filter = (
+        Q(status='sotilgan') |
+        Q(balance__gte=F('price')) |
+        Q(total_paid__gte=F('price'))
+    )
+    sotilgan = qs.filter(sold_filter).count()
+    band_filter = (
+        Q(status='band') |
+        Q(payments__payment_type='band', payments__status__in=['pending', 'overdue'])
+    )
+    band = qs.exclude(sold_filter).filter(band_filter).distinct().count()
+    total = queryset.count()
+    bosh = max(0, total - sotilgan - band)
+    return {'total': total, 'bosh': bosh, 'band': band, 'sotilgan': sotilgan}
+
+
 class ObjectSerializer(serializers.ModelSerializer):
     model_3d_url = serializers.SerializerMethodField()
     apartment_stats = serializers.SerializerMethodField()

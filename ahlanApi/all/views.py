@@ -8,6 +8,7 @@ from .serializers import (
     ExpenseTypeSerializer, SupplierSerializer, ExpenseSerializer,
     PaymentSerializer, UserPaymentSerializer, DocumentSerializer, SupplierPaymentSerializer,
     RoomTypeModelSerializer, OrganizationReportSerializer,
+    get_apartment_stats_for_queryset,
 )
 from .report_service import build_full_report_docx
 from .pagination import CustomPagination
@@ -220,13 +221,21 @@ class ApartmentViewSet(viewsets.ModelViewSet):
         'object', 'rooms', 'floor', 'status', 'price', 'area', 'room_number'
     ]
 
+    def list(self, request, *args, **kwargs):
+        """Ro'yxat + filtrlangan xonadonlar statistikasi (filter_stats)."""
+        queryset = self.filter_queryset(self.get_queryset())
+        filter_stats = get_apartment_stats_for_queryset(queryset)
+        response = super().list(request, *args, **kwargs)
+        response.data['filter_stats'] = filter_stats
+        return response
+
     def get_queryset(self):
         queryset = super().get_queryset()
-        min_price = self.request.query_params.get('min_price', None)
-        max_price = self.request.query_params.get('max_price', None)
-        min_area = self.request.query_params.get('min_area', None)
-        max_area = self.request.query_params.get('max_area', None)
-
+        params = self.request.query_params
+        min_price = params.get('min_price') or params.get('price__gte')
+        max_price = params.get('max_price') or params.get('price__lte')
+        min_area = params.get('min_area') or params.get('area__gte')
+        max_area = params.get('max_area') or params.get('area__lte')
         if min_price:
             queryset = queryset.filter(price__gte=min_price)
         if max_price:
@@ -235,7 +244,13 @@ class ApartmentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(area__gte=min_area)
         if max_area:
             queryset = queryset.filter(area__lte=max_area)
-
+        status_in = params.get('status__in')
+        if status_in:
+            values = [v.strip().lower() for v in status_in.split(',') if v.strip()]
+            if values:
+                if 'paid' in values and 'sotilgan' not in values:
+                    values.append('sotilgan')
+                queryset = queryset.filter(status__in=values)
         return queryset
 
     def get_permissions(self):

@@ -152,6 +152,7 @@ export default function ApartmentsPage() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
+  const [filterStats, setFilterStats] = useState<{ total: number; bosh: number; band: number; sotilgan: number } | null>(null);
   const [filters, setFilters] = useState({
     status: statusParam,
     rooms: roomsParam,
@@ -289,6 +290,7 @@ export default function ApartmentsPage() {
       if (response.status === 401) { clearAuthAndRedirect(router); return; }
       if (!response.ok) throw new Error(`Xonadonlarni olishda xatolik (${response.status})`);
       const data = await response.json();
+      setFilterStats(data.filter_stats || null);
       setTotalPages(Math.ceil((data.count || 0) / ITEMS_PER_PAGE));
       const detailFetchPromises = (data.results || []).map(async (apartment: any) => {
         let allPayments: Payment[] = [];
@@ -714,6 +716,20 @@ export default function ApartmentsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {filterStats != null && (
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Umumiy xonadonlar statistikasi (filtr bo&apos;yicha)</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="rounded-lg px-3 py-2 text-sm font-medium bg-emerald-100 text-emerald-800">Bo&apos;sh: {filterStats.bosh}</div>
+                <div className="rounded-lg px-3 py-2 text-sm font-medium bg-amber-100 text-amber-800">Band qilingan: {filterStats.band}</div>
+                <div className="rounded-lg px-3 py-2 text-sm font-medium bg-slate-200 text-slate-800">Sotilgan: {filterStats.sotilgan}</div>
+                <div className="rounded-lg px-3 py-2 text-sm font-semibold bg-gray-100 text-gray-800 border border-gray-200">Umumiy: {filterStats.total} ta</div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {loading ? (
           viewMode === "shaxmat" ? (

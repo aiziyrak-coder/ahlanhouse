@@ -51,18 +51,8 @@ const handleApiError = (error, response, router) => {
   return false;
 };
 
-// Kartada faqat 3 ta status: Bo'sh, Band qilingan, Sotilgan — yig'indisi = Xonadonlar soni
-const APARTMENT_STATUS_LABELS_3 = [
-  { key: 'bosh' as const, label: "Bo'sh", color: "bg-emerald-100 text-emerald-800" },
-  { key: 'band' as const, label: "Band qilingan", color: "bg-amber-100 text-amber-800" },
-  { key: 'sotilgan' as const, label: "Sotilgan", color: "bg-slate-200 text-slate-800" },
-];
-
 // Obyekt kartasi komponenti
 const ObjectCard = ({ object, onEdit, onDelete, canPerformActions }) => {
-  const stats = object.apartment_stats || { bosh: 0, band: 0, sotilgan: 0 };
-  const totalApartments = object.total_apartments ?? 0;
-
   return (
     <Card className="transition-all duration-200 flex flex-col">
       <CardHeader className="pb-2">
@@ -95,20 +85,6 @@ const ObjectCard = ({ object, onEdit, onDelete, canPerformActions }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
             </svg>
             <p className="text-gray-600">Qavatlar: {object.floors}</p>
-          </div>
-          {/* Xonadonlar statistikasi — 3 ta status: Bo'sh, Band qilingan, Sotilgan (yig'indisi = 40) */}
-          <div className="pt-2 border-t border-gray-100 space-y-1.5">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Xonadonlar statistikasi</p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {APARTMENT_STATUS_LABELS_3.map(({ key, label, color }) => (
-                <div key={key} className={`rounded px-2 py-1 text-xs font-medium ${color}`}>
-                  {label}: {stats[key] ?? 0}
-                </div>
-              ))}
-              <div className="col-span-2 rounded px-2 py-1.5 text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
-                Umumiy (jami): {totalApartments} ta xonadon
-              </div>
-            </div>
           </div>
           {object.description && (
             <div className="flex items-start space-x-2">
