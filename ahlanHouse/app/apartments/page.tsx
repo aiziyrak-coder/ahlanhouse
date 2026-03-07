@@ -187,6 +187,12 @@ export default function ApartmentsPage() {
   const [showDebtorsModal, setShowDebtorsModal] = useState(false);
   const [debtors, setDebtors] = useState<Apartment[]>([]);
 
+  const getAuthHeaders = useCallback(() => ({
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${accessToken}`,
+  }), [accessToken]);
+
   const sendTelegramNotification = useCallback(async (message: string) => {
     const headers = getAuthHeaders();
     if (!headers || !(headers as Record<string, string>)["Authorization"] || !TELEGRAM_CHAT_ID) return;
@@ -239,12 +245,6 @@ export default function ApartmentsPage() {
     if (isRestrictedRole || hasSardorInFio) return false;
     return true;
   }, []);
-
-  const getAuthHeaders = useCallback(() => ({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    }), [accessToken]);
 
   const fetchProperties = useCallback(async () => {
     if (!accessToken) return;
