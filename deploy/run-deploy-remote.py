@@ -90,10 +90,12 @@ def main():
         run(ssh, f"cd {FRONTEND} && (pm2 delete ahlan-house 2>/dev/null; true); sleep 1; pm2 start npm --name ahlan-house -- start", check=False)
         run(ssh, "pm2 save 2>/dev/null; true", check=False)
 
-        print("\n[5] Nginx api.ahlan.uz (static path).")
-        run(ssh, f"cp {PROJECT}/deploy/nginx-api.ahlan.uz.conf /etc/nginx/sites-available/api.ahlan.uz 2>/dev/null; nginx -t 2>&1 && systemctl reload nginx 2>&1 || true", check=False)
+        print("\n[5] Nginx (api.ahlan.uz + ahlan.uz).")
+        run(ssh, f"cp {PROJECT}/deploy/nginx-api.ahlan.uz.conf /etc/nginx/sites-available/api.ahlan.uz 2>/dev/null; true", check=False)
+        run(ssh, f"cp {PROJECT}/deploy/nginx-ahlan.conf /etc/nginx/sites-available/ahlan 2>/dev/null; true", check=False)
+        run(ssh, "nginx -t 2>&1 && systemctl reload nginx 2>&1 || true", check=False)
 
-        print("\nTugadi. Backend :8000, Frontend PM2 (ahlan-house).")
+        print("\nTugadi. Backend :8000, Frontend PM2 (ahlan-house). ahlan.uz: _next/static diskdan, HTML no-cache.")
     finally:
         ssh.close()
 
