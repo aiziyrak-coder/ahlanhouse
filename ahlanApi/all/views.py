@@ -12,6 +12,7 @@ from .serializers import (
 from .report_service import build_full_report_docx
 from .pagination import CustomPagination
 from .filters import PaymentFilter
+from rest_framework import serializers
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.http import FileResponse
@@ -101,12 +102,22 @@ def _extract_zip_and_find_model(zip_file, target_dir_abs):
         return None
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Accepts phone_number + password from frontend; maps phone_number to username for Django auth."""
+    phone_number = serializers.CharField(required=False)
+
+    def validate(self, attrs):
+        # Frontend sends phone_number; SimpleJWT uses username (our User.USERNAME_FIELD = phone_number)
+        if attrs.get('phone_number') and not attrs.get('username'):
+            attrs['username'] = attrs['phone_number']
+        return super().validate(attrs)
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
         token['user_type'] = user.user_type
         token['fio'] = user.fio
         return token
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer

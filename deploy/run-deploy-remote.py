@@ -57,6 +57,7 @@ def main():
         run(ssh, f"cd {BACKEND} && python3 -m venv venv 2>/dev/null; true")
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && pip install -q -r requirements.txt")
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py migrate --noinput")
+        run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py create_sotuv_demo_user", check=False)
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py collectstatic --noinput --clear 2>/dev/null; true")
 
         print("\n[3] Frontend (Next.js).")
