@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""SSH orqali serverga ulanish va deploy/pull qilish. Ishlatish: python deploy/run-deploy-remote.py
+Parolni xavfsiz saqlash: set DEPLOY_SSH_PASSWORD=your_password (yoki .env dan o'qishingiz mumkin)"""
+import os
+import sys
+import paramiko
+
+HOST = "64.226.109.56"
+USER = os.environ.get("DEPLOY_SSH_USER", "root")
+PASSWORD = os.environ.get("DEPLOY_SSH_PASSWORD", "Ahadjon77House")
+REPO = "https://github.com/aiziyrak-coder/ahlanhouse.git"
+WWW = "/var/www"
+PROJECT = f"{WWW}/ahlanhouse"
+BACKEND = f"{PROJECT}/ahlanApi"
+FRONTEND = f"{PROJECT}/ahlanHouse"
+
+def run(ssh, cmd, check=True):
+    print(f"  $ {cmd[:80]}{'...' if len(cmd) > 80 else ''}")
+    stdin, stdout, stderr = ssh.exec_command(cmd, get_pty=False)
+    out = stdout.read().decode(errors="replace")
+    err = stderr.read().decode(errors="replace")
+    code = stdout.channel.recv_exit_status()
+    if out:
+        try:
+            print(out)
+        except UnicodeEncodeError:
+            print(out.encode("ascii", errors="replace").decode("ascii"))
+    if err and code != 0:
+        try:
+            print(err, file=sys.stderr)
+        except UnicodeEncodeError:
+            print(err.encode("ascii", errors="replace").decode("ascii"), file=sys.stderr)
+    if check and code != 0:
+        raise RuntimeError(f"Exit code {code}: {cmd[:60]}")
+    return code, out, err
+
+def main():
+    print("SSH ulanish...", HOST)
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(HOST, username=USER, password=PASSWORD, timeout=30)
+    try:
+        # Loyiha bormi?
+        _, out, _ = run(ssh, f"[ -d '{PROJECT}' ] && echo YES || echo NO", check=False)
+        exists = "YES" in out
+
+        if not exists:
+            print("\n[1] Loyiha yo'q — to'liq deploy.")
+            run(ssh, f"sudo rm -rf {WWW}/* 2>/dev/null; sudo mkdir -p {WWW}")
+            run(ssh, f"sudo git clone {REPO} {PROJECT}")
+            run(ssh, f"sudo chown -R $USER:$USER {PROJECT}")
+        else:
+            print("\n[1] Loyiha bor — git pull.")
+            run(ssh, f"cd {PROJECT} && git pull origin main")
+
+        print("\n[2] Backend (Django).")
+        run(ssh, f"cd {BACKEND} && python3 -m venv venv 2>/dev/null; true")
+        run(ssh, f"cd {BACKEND} && source venv/bin/activate && pip install -q -r requirements.txt")
+        run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py migrate --noinput")
+        run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py collectstatic --noinput --clear 2>/dev/null; true")
+
+        print("\n[3] Frontend (Next.js).")
+        run(ssh, f"cd {FRONTEND} && npm install --legacy-peer-deps", check=True)
+        run(ssh, f"cd {FRONTEND} && rm -rf .next && npm run build")
+
+        print("\n[4] Gunicorn + PM2 qayta ishga tushirish.")
+        run(ssh, f"pkill -f 'gunicorn.*ahlanApi' 2>/dev/null; true", check=False)
+        run(ssh, f"cd {BACKEND} && source venv/bin/activate && nohup gunicorn ahlanApi.wsgi:application --bind 0.0.0.0:8000 --workers 2 --daemon --access-logfile {WWW}/gunicorn-access.log --error-logfile {WWW}/gunicorn-error.log >/dev/null 2>&1 &", check=False)
+        run(ssh, f"cd {FRONTEND} && (pm2 delete ahlan-house 2>/dev/null; true); pm2 start npm --name ahlan-house -- start", check=False)
+        run(ssh, "pm2 save 2>/dev/null; true", check=False)
+
+        print("\nTugadi. Backend :8000, Frontend PM2 (ahlan-house).")
+    finally:
+        ssh.close()
+
+if __name__ == "__main__":
+    main()

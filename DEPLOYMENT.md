@@ -1,5 +1,7 @@
 # Ahlan House — GitHub va DigitalOcean deploy qilish
 
+**Server:** `64.226.109.56` (DigitalOcean)
+
 ## 1. Git sozlash va GitHub'ga yuborish (lokal kompyuteringizda)
 
 Loyiha papkasida (masalan `D:\ahlan_for_cursor`) quyidagi buyruqlarni bajarishingiz kerak.
@@ -59,7 +61,31 @@ Serverni ulang (MobaXterm yoki SSH). Quyidagilar o‘rnatilgan bo‘lishi kerak:
 - Node.js (LTS) va npm
 - PM2: `npm install -g pm2`
 
-### 2.2 Master Scriptni ishga tushirish
+### 2.2 Serverni ulash va pull qilish
+
+**MobaXterm yoki SSH orqali ulanish:**
+```bash
+ssh root@64.226.109.56
+```
+(yoki `ubuntu@64.226.109.56` — serverda qaysi foydalanuvchi borligiga qarab). Parol so‘ralsa kiriting.
+
+**Faqat yangi kodni tortish (loyiha allaqachon clone qilingan bo‘lsa):**  
+`deploy/server-pull.sh` faylini serverni `~` papkasiga nusxalang, keyin:
+```bash
+chmod +x ~/server-pull.sh
+~/server-pull.sh
+```
+Skript: `git pull`, backend migrate/build, frontend build, Gunicorn va PM2 ni qayta ishga tushiradi.
+
+**Yoki qo‘lda:**
+```bash
+cd /var/www/ahlanhouse
+git pull origin main
+# Keyin backend: cd ahlanApi && source venv/bin/activate && python manage.py migrate && ...
+# Frontend: cd ahlanHouse && npm install && npm run build && pm2 restart ahlan-house
+```
+
+### 2.3 Master Scriptni ishga tushirish (birinchi marta deploy)
 
 **Birinchi marta:** Loyihani GitHub'ga push qilgach, `deploy/master-deploy.sh` faylini WinSCP orqali serverni istalgan joyiga (masalan foydalanuvchi uy papkasi `~`) nusxalang. Masalan: `C:\...\ahlan_for_cursor\deploy\master-deploy.sh` → serverda `~/master-deploy.sh`.
 
