@@ -1,0 +1,297 @@
+"use client";
+
+import type React from "react";
+import { useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import { getApiBaseUrl } from "@/app/lib/api";
+
+const API_BASE_URL = getApiBaseUrl();
+const TELEGRAM_BOT_TOKEN = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || "";
+const TELEGRAM_CHAT_ID = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID || "-1003733316489";
+
+
+// Valyutani formatlash uchun yordamchi funksiya
+const formatCurrency = (amount: number | string) => {
+  if (amount == null || isNaN(Number(amount))) return "-";
+  return Number(amount).toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 }).replace('$', '') + ' $';
+};
+
+export default function AddApartmentPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const propertyIdParam = searchParams.get("propertyId");
+
+  const [loading, setLoading] = useState(false);
+  const [properties, setProperties] = useState<any[]>([]);
+  const [formData, setFormData] = useState({
+    object: propertyIdParam || "",
+    room_number: "",
+    floor: "",
+    rooms: "",
+    area: "",
+    price: "",
+    description: "",
+    status: "bosh",
+  });
+  const [isPriceManual, setIsPriceManual] = useState(false);
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+
+  const sendTelegramNotification = useCallback(async (message: string) => {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+    try {
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+    } catch (error) {
+      console.error("Telegram xabarnomasini yuborishda xatolik:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchAllProperties = async () => {
+      if (!token) {
+        toast({ title: "Xatolik", description: "Foydalanuvchi autentifikatsiyadan o‘tmagan", variant: "destructive" });
+        router.push("/login");
+        return;
+      }
+
+      try {
+        let allProperties: any[] = [];
+        let nextUrl: string | null = `${API_BASE_URL}/objects/?page_size=1000`;
+
+        while (nextUrl) {
+          const response = await fetch(nextUrl, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!response.ok) throw new Error("Obyektlarni yuklashda xatolik");
+          const data: { results?: any[]; next?: string | null } = await response.json();
+          allProperties = [...allProperties, ...(data.results ? data.results : [])];
+          nextUrl = data.next ?? null;
+        }
+        setProperties(allProperties);
+      } catch (error) {
+        toast({ title: "Xatolik", description: (error as Error).message, variant: "destructive" });
+      }
+    };
+
+    if (token) {
+      fetchAllProperties();
+    }
+  }, [token, router]);
+
+  useEffect(() => {
+    if (formData.area && !isPriceManual) {
+      const calculatedPrice = (parseFloat(formData.area) * 550).toFixed(2);
+      setFormData((prev) => ({ ...prev, price: calculatedPrice }));
+    }
+  }, [formData.area, isPriceManual]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    if (name === "price") setIsPriceManual(true);
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const payload = {
+        object: Number(formData.object),
+        room_number: formData.room_number,
+        rooms: Number(formData.rooms),
+        area: Number(formData.area),
+        floor: Number(formData.floor),
+        price: Number(formData.price),
+        status: formData.status,
+        description: formData.description || "",
+      };
+
+      const response = await fetch(`${API_BASE_URL}/apartments/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          if (typeof window !== "undefined") localStorage.removeItem("access_token");
+          router.push("/login");
+          return;
+        }
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Xonadon qo'shishda xatolik yuz berdi");
+      }
+
+      const currentUserFio = localStorage.getItem("user_fio") || "Noma'lum foydalanuvchi";
+      const objectName = properties.find(p => p.id.toString() === formData.object)?.name || "Noma'lum obyekt";
+      const message = `<b>✅🏢 Yangi Xonadon Qo'shildi</b>\n\n` +
+                      `<b>Kim tomonidan:</b> ${currentUserFio}\n` +
+                      `<b>Obyekt:</b> ${objectName}\n\n` +
+                      `<b>Xonadon raqami:</b> ${payload.room_number}\n` +
+                      `<b>Xonalar soni:</b> ${payload.rooms}\n` +
+                      `<b>Maydoni:</b> ${payload.area} m²\n` +
+                      `<b>Qavat:</b> ${payload.floor}\n` +
+                      `<b>Narxi:</b> ${formatCurrency(payload.price)}\n` +
+                      `<b>Tavsif:</b> ${payload.description || "Kiritilmagan"}`;
+      await sendTelegramNotification(message);
+
+      toast({
+        title: "Xonadon qo'shildi",
+        description: "Yangi xonadon muvaffaqiyatli qo'shildi",
+      });
+      router.push("/apartments");
+    } catch (error) {
+      toast({
+        title: "Xatolik",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col">
+      <div className="flex-1 space-y-4">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Yangi xonadon qo'shish</h2>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Xonadon ma'lumotlari</CardTitle>
+            <CardDescription>Yangi xonadon haqida asosiy ma'lumotlarni kiriting</CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="object">Obyekt</Label>
+                  <Select
+                    value={formData.object}
+                    onValueChange={(value) => handleSelectChange("object", value)}
+                    required
+                  >
+                    <SelectTrigger id="object">
+                      <SelectValue placeholder="Obyektni tanlang" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {properties.map((property) => (
+                        <SelectItem key={property.id} value={property.id.toString()}>
+                          {property.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="room_number">Xonadon raqami</Label>
+                  <Input
+                    id="room_number"
+                    name="room_number"
+                    type="text"
+                    placeholder="Masalan: 101"
+                    value={formData.room_number}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="floor">Qavat</Label>
+                  <Input
+                    id="floor"
+                    name="floor"
+                    type="number"
+                    placeholder="Masalan: 10"
+                    value={formData.floor}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rooms">Xonalar soni</Label>
+                  <Input
+                    id="rooms"
+                    name="rooms"
+                    type="number"
+                    placeholder="Masalan: 3"
+                    value={formData.rooms}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="area">Maydon (m²)</Label>
+                  <Input
+                    id="area"
+                    name="area"
+                    type="number"
+                    step="0.01"
+                    placeholder="Masalan: 75.5"
+                    value={formData.area}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="price">Narx ($)</Label>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    placeholder="Avtomatik hisoblanadi yoki qo‘lda kiriting"
+                    value={formData.price}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="description">Tavsif</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    placeholder="Xonadon haqida qo'shimcha ma'lumot"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={4}
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" type="button" onClick={() => router.push("/apartments")}>
+                Bekor qilish
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Saqlanmoqda..." : "Saqlash"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
+    </div>
+  );
+}

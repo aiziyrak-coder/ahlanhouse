@@ -1,0 +1,372 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* iOS 26.3 / macOS — liquid glass & frosted glass (eye-friendly, no pure white) */
+@layer base {
+  :root {
+    /* Soft blue-gray background — clearly off-white, easy on eyes */
+    --background: 220 24% 91%;
+    --foreground: 220 22% 18%;
+    /* Glass surfaces: tinted, not white */
+    --card: 220 28% 96%;
+    --card-foreground: 220 22% 18%;
+    --popover: 220 28% 96%;
+    --popover-foreground: 220 22% 18%;
+    --primary: 211 100% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 22% 88%;
+    --secondary-foreground: 220 22% 22%;
+    --muted: 220 20% 86%;
+    --muted-foreground: 220 12% 38%;
+    --accent: 220 22% 85%;
+    --accent-foreground: 220 22% 18%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 18% 82%;
+    --input: 220 18% 84%;
+    --ring: 211 100% 48%;
+    --radius: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --radius-2xl: 1.5rem;
+    --sidebar-background: 220 20% 16%;
+    --sidebar-foreground: 220 14% 92%;
+    --sidebar-primary: 211 100% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 18% 24%;
+    --sidebar-accent-foreground: 220 14% 92%;
+    --sidebar-border: 220 16% 26%;
+    --sidebar-ring: 211 100% 55%;
+    --chart-1: 211 100% 48%;
+    --chart-2: 160 55% 42%;
+    --chart-3: 30 75% 52%;
+    --chart-4: 280 60% 58%;
+    --chart-5: 340 70% 52%;
+  }
+  .dark {
+    --background: 220 16% 8%;
+    --foreground: 220 12% 95%;
+    --card: 220 16% 11%;
+    --card-foreground: 220 12% 95%;
+    --popover: 220 16% 11%;
+    --popover-foreground: 220 12% 95%;
+    --primary: 211 100% 55%;
+    --primary-foreground: 220 16% 8%;
+    --secondary: 220 14% 16%;
+    --secondary-foreground: 220 12% 95%;
+    --muted: 220 14% 16%;
+    --muted-foreground: 220 10% 58%;
+    --accent: 220 14% 16%;
+    --accent-foreground: 220 12% 95%;
+    --destructive: 0 58% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 12% 18%;
+    --input: 220 12% 18%;
+    --ring: 211 100% 55%;
+    --sidebar-background: 220 16% 8%;
+    --sidebar-foreground: 220 12% 90%;
+    --sidebar-primary: 211 100% 55%;
+    --sidebar-primary-foreground: 220 16% 8%;
+    --sidebar-accent: 220 14% 16%;
+    --sidebar-accent-foreground: 220 12% 95%;
+    --sidebar-border: 220 12% 18%;
+    --sidebar-ring: 211 100% 55%;
+    --chart-1: 211 100% 55%;
+    --chart-2: 160 55% 48%;
+    --chart-3: 30 75% 58%;
+    --chart-4: 280 60% 62%;
+    --chart-5: 340 70% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", system-ui, Roboto, sans-serif;
+    background: transparent;
+  }
+  /* Smooth transitions for buttons, links, cards */
+  button, a, [role="button"] {
+    @apply transition-colors duration-200;
+  }
+  /* Fokus: klaviatura navigatsiyasi (a11y) */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  .skip-link {
+    @apply absolute left-4 top-4 z-[100] -translate-y-16 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg transition-transform focus:translate-y-0;
+  }
+}
+
+/* Asosiy orqa fon: och yashil, och ko'k, och sariq — uyg'un gradient, sekin animatsiya */
+.theme-wrapper {
+  min-height: 100vh;
+  background: linear-gradient(
+    160deg,
+    hsl(148 52% 90%) 0%,
+    hsl(195 55% 88%) 35%,
+    hsl(42 70% 88%) 70%,
+    hsl(148 52% 90%) 100%
+  );
+  background-size: 300% 300%;
+  background-attachment: scroll;
+  animation: theme-gradient-shift 28s ease-in-out infinite;
+}
+
+@keyframes theme-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Band qilish / Sotish tugmasi: juda yumshoq gradient (deyarli bir xil rang), matn oq */
+@keyframes btn-band-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.btn-band-sotish {
+  background: linear-gradient(135deg, hsl(152 45% 48%) 0%, hsl(152 48% 44%) 35%, hsl(150 46% 46%) 70%, hsl(152 45% 48%) 100%);
+  background-size: 200% 200%;
+  animation: btn-band-gradient 6s ease-in-out infinite;
+  color: #fff !important;
+  border: 1px solid hsl(152 40% 38% / 0.6) !important;
+  font-weight: 600;
+}
+.btn-band-sotish:hover {
+  background: linear-gradient(135deg, hsl(152 48% 44%) 0%, hsl(152 45% 46%) 50%, hsl(152 48% 44%) 100%);
+  background-size: 200% 200%;
+  color: #fff !important;
+  border-color: hsl(152 40% 35% / 0.8) !important;
+}
+.dark .btn-band-sotish {
+  background: linear-gradient(135deg, hsl(152 42% 32%) 0%, hsl(150 44% 28%) 50%, hsl(152 42% 32%) 100%);
+  background-size: 200% 200%;
+  color: #fff !important;
+  border-color: hsl(152 35% 28% / 0.7) !important;
+}
+.dark .btn-band-sotish:hover {
+  background: linear-gradient(135deg, hsl(152 44% 35%) 0%, hsl(150 42% 32%) 50%, hsl(152 44% 35%) 100%);
+  background-size: 200% 200%;
+  color: #fff !important;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .page-container {
+    @apply min-h-screen bg-background;
+  }
+  /* Asosiy platforma fon — faqat theme-wrapper da; content-area shaffof */
+  .content-area {
+    background: transparent;
+    min-height: 100%;
+    perspective: 1200px;
+    transform-style: preserve-3d;
+  }
+  .dark .content-area {
+    background: transparent;
+  }
+  .dark .theme-wrapper {
+    background: linear-gradient(165deg, hsl(220 16% 10%) 0%, hsl(235 14% 9%) 50%, hsl(220 16% 8%) 100%);
+  }
+  /* Header — suyuq oyna */
+  .header-bar {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom-color: rgba(255, 255, 255, 0.4);
+  }
+  /* Barcha cardlar — suyuq oyna */
+  .app-card .app-card-inner {
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+  .app-card:hover .app-card-inner {
+    background: rgba(255, 255, 255, 0.26);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+  /* Dock — suyuq oyna */
+  .dock-container {
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  }
+  .dock-container:hover {
+    background: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  }
+  /* Jadval wrapper — suyuq oyna */
+  .app-table-wrapper {
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    overflow: hidden;
+  }
+  /* Input — suyuq oyna */
+  .app-input {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .app-input:focus {
+    background: rgba(255, 255, 255, 0.45);
+    border-color: hsl(211 100% 48% / 0.35);
+  }
+  /* Select — suyuq oyna */
+  .app-select-trigger {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .app-select-content {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+  /* Dialog — suyuq oyna (portal body ichida) */
+  .app-dialog-content {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  }
+  /* Sahifa kartalari / bloklar — suyuq oyna */
+  .app-page-card {
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  /* Umumiy suyuq oyna — sahifalarda qo‘llash uchun .app-glass class */
+  .app-glass {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  /* Sahifa layouti: bir xil kenglik va bo'shliq */
+  .app-page {
+    @apply mx-auto w-full max-w-[1600px];
+  }
+  /* Stagger delays for animations */
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.1s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.2s; }
+  .stagger-5 { animation-delay: 0.25s; }
+  .stagger-6 { animation-delay: 0.3s; }
+  /* Frosted glass cards — colored glow on hover */
+  .glass-card {
+    @apply rounded-2xl border border-white/40 bg-white/70 shadow-lg shadow-black/5 backdrop-blur-2xl transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-0.5;
+  }
+  .apple-card {
+    @apply rounded-2xl border border-white/40 bg-white/70 backdrop-blur-2xl shadow-lg shadow-black/5 transition-all duration-300 hover:-translate-y-0.5;
+  }
+  .apple-card-elevated {
+    @apply rounded-2xl border border-white/40 bg-white/75 backdrop-blur-2xl shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1;
+  }
+  /* Accent icon circles — use with bg */
+  .icon-circle-primary { @apply rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 text-blue-600; }
+  .icon-circle-success { @apply rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 text-emerald-600; }
+  .icon-circle-violet { @apply rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-600/10 text-violet-600; }
+  .icon-circle-amber { @apply rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 text-amber-600; }
+  .icon-circle-sky { @apply rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10 text-sky-600; }
+
+  /* macOS dock — smooth scale on hover */
+  .dock-icon {
+    transform-origin: center bottom;
+    will-change: transform;
+  }
+  .dock-container .dock-icon {
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, color 0.2s ease;
+  }
+  .dock-container .dock-icon:hover {
+    transform: scale(1.2);
+  }
+  .dock-container .dock-icon:active {
+    transform: scale(1.08);
+  }
+
+  /* Card: chegara bo'ylab suzuvchi gradient — faqat ranglar harakatlanadi, element aylanmaydi */
+  @property --card-border-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+  @keyframes card-border-flow {
+    to {
+      --card-border-angle: 360deg;
+    }
+  }
+  .card-border-gradient {
+    --card-border-angle: 0deg;
+    position: absolute;
+    inset: 0;
+    border-radius: 1.5rem;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--card-border-angle),
+      hsl(217 91% 60%),
+      hsl(271 91% 65%),
+      hsl(142 71% 45%),
+      hsl(38 92% 50%),
+      hsl(217 91% 60%)
+    );
+    animation: card-border-flow 8s linear infinite;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .dark .card-border-gradient {
+    background: conic-gradient(
+      from var(--card-border-angle),
+      hsl(217 91% 62%),
+      hsl(271 91% 68%),
+      hsl(142 71% 50%),
+      hsl(38 92% 55%),
+      hsl(217 91% 62%)
+    );
+  }
+
+  /* Xonadon kartalari — bir xil balandlik (Tailwind arbitrary h-[300px] build xatosiga sabab bo‘lmasin) */
+  .apartment-card-height {
+    height: 18.75rem; /* 300px */
+  }
+
+  /* Hoshiyalar (toast): yonda, silliq animatsiya */
+  [data-radix-toast-viewport] {
+    --viewport-padding: 1rem;
+  }
+  [data-state="open"][data-radix-toast-root],
+  [data-state="closed"][data-radix-toast-root] {
+    animation-duration: 0.35s;
+    animation-timing-function: cubic-bezier(0.21, 0.47, 0.32, 0.98);
+  }
+  [data-state="closed"][data-radix-toast-root] {
+    animation-duration: 0.25s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
