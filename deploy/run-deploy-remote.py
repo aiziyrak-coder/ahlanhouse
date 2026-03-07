@@ -93,6 +93,7 @@ def main():
         print("\n[5] Nginx (api.ahlan.uz + ahlan.uz).")
         run(ssh, f"cp {PROJECT}/deploy/nginx-api.ahlan.uz.conf /etc/nginx/sites-available/api.ahlan.uz 2>/dev/null; true", check=False)
         run(ssh, f"cp {PROJECT}/deploy/nginx-ahlan.conf /etc/nginx/sites-available/ahlan 2>/dev/null; true", check=False)
+        run(ssh, "ln -sf /etc/nginx/sites-available/ahlan /etc/nginx/sites-enabled/ahlan 2>/dev/null; true", check=False)
         run(ssh, "nginx -t 2>&1 && systemctl reload nginx 2>&1 || true", check=False)
 
         print("\nTugadi. Backend :8000, Frontend PM2 (ahlan-house). ahlan.uz: _next/static diskdan, HTML no-cache.")
