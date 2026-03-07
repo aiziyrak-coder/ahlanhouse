@@ -51,17 +51,19 @@ const handleApiError = (error, response, router) => {
   return false;
 };
 
-// Xonadon statuslari bo'yicha statistikalar (obyekt kartasida)
+// Xonadon statuslari bo'yicha statistikalar (obyekt kartasida). Tartib: bosh, band, muddatli, qarzdor, sotilgan
 const APARTMENT_STATUS_LABELS = {
   bosh: { label: "Bo'sh", color: "bg-emerald-100 text-emerald-800" },
   band: { label: "Band qilingan", color: "bg-amber-100 text-amber-800" },
   muddatli: { label: "Muddatli", color: "bg-blue-100 text-blue-800" },
+  qarzdor: { label: "Qarzdor", color: "bg-red-100 text-red-800" },
   sotilgan: { label: "Sotilgan", color: "bg-slate-200 text-slate-800" },
 };
 
 // Obyekt kartasi komponenti
 const ObjectCard = ({ object, onEdit, onDelete, canPerformActions }) => {
-  const stats = object.apartment_stats || { bosh: 0, band: 0, muddatli: 0, sotilgan: 0 };
+  const stats = object.apartment_stats || { bosh: 0, band: 0, muddatli: 0, qarzdor: 0, sotilgan: 0 };
+  const statsSum = (stats.bosh ?? 0) + (stats.band ?? 0) + (stats.muddatli ?? 0) + (stats.qarzdor ?? 0) + (stats.sotilgan ?? 0);
 
   return (
     <Card className="transition-all duration-200 flex flex-col">
@@ -105,9 +107,9 @@ const ObjectCard = ({ object, onEdit, onDelete, canPerformActions }) => {
                   {label}: {stats[key] ?? 0}
                 </div>
               ))}
-              {/* Obyekt bo'yicha umumiy statistika */}
+              {/* Umumiy = barcha statuslar yig'indisi (ro'yxatdagi xonadonlar soni) */}
               <div className="col-span-2 rounded px-2 py-1.5 text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
-                Umumiy (obyekt bo&apos;yicha jami): {Number(object.total_apartments) ?? 0} ta xonadon
+                Umumiy (jami): {statsSum} ta xonadon
               </div>
             </div>
           </div>
