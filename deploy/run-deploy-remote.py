@@ -87,7 +87,7 @@ def main():
         token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").replace("'", "'\"'\"'")
         export_tg = f"export TELEGRAM_BOT_TOKEN='{token}'; " if token else ""
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && {export_tg}nohup gunicorn ahlanApi.wsgi:application --bind 0.0.0.0:8000 --workers 2 --daemon --access-logfile {WWW}/gunicorn-access.log --error-logfile {WWW}/gunicorn-error.log >/dev/null 2>&1 &", check=False)
-        run(ssh, f"cd {FRONTEND} && (pm2 delete ahlan-house 2>/dev/null; true); sleep 1; pm2 start server.js --name ahlan-house", check=False)
+        run(ssh, f"cd {FRONTEND} && (pm2 delete ahlan-house 2>/dev/null; true); sleep 1; NODE_ENV=production pm2 start server.js --name ahlan-house", check=False)
         run(ssh, "pm2 save 2>/dev/null; true", check=False)
 
         print("\n[5] Nginx (api.ahlan.uz + ahlan.uz).")

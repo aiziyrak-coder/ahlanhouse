@@ -8,6 +8,7 @@ const path = require("path");
 const { parse } = require("url");
 const next = require("next");
 
+if (process.env.NODE_ENV === undefined) process.env.NODE_ENV = "production";
 const port = parseInt(process.env.PORT || "3000", 10);
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
