@@ -1,5 +1,5 @@
 /**
- * Custom Next.js server: /_next/static/* diskdan xizmat qiladi, fayl yo'q bo'lsa 404 (500 emas).
+ * Custom Next.js server: /_next/static/* diskdan xizmat qiladi, fayl yo'q yoki xato bo'lsa 404 (500 hech qachon emas).
  * ChunkLoadError va deploy keyin eski chunk so'rovlari 404 qaytadi, brauzer yangilash ishlaydi.
  */
 const http = require("http");
@@ -29,47 +29,72 @@ const MIMES = {
   ".json": "application/json",
 };
 
-function serveStatic(req, res, urlPath) {
-  const base = path.join(__dirname, ".next", "static");
-  const subPath = urlPath.replace(/^\/_next\/static\//, "").replace(/\?.*$/, "");
-  if (!subPath || subPath.includes("..")) {
-    res.writeHead(404);
-    res.end();
-    return;
-  }
-  const filePath = path.join(base, subPath);
-  const resolved = path.resolve(filePath);
-  if (!resolved.startsWith(path.resolve(base))) {
-    res.writeHead(404);
-    res.end();
-    return;
-  }
-  fs.access(resolved, fs.constants.R_OK, (err) => {
-    if (err) {
+function send404(res) {
+  try {
+    if (!res.headersSent) {
       res.writeHead(404);
       res.end();
+    }
+  } catch (_) {}
+}
+
+function serveStatic(req, res, urlPath) {
+  try {
+    const base = path.join(__dirname, ".next", "static");
+    const subPath = (urlPath || "")
+      .replace(/^\/_next\/static\//, "")
+      .replace(/\?.*$/, "")
+      .trim();
+    if (!subPath || subPath.includes("..")) {
+      send404(res);
       return;
     }
-    const ext = path.extname(resolved);
-    const type = MIMES[ext] || "application/octet-stream";
-    res.setHeader("Content-Type", type);
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    fs.createReadStream(resolved).pipe(res);
-  });
+    const filePath = path.join(base, subPath);
+    const baseResolved = path.resolve(base);
+    const resolved = path.resolve(filePath);
+    if (!resolved.startsWith(baseResolved)) {
+      send404(res);
+      return;
+    }
+    fs.access(resolved, fs.constants.R_OK, (err) => {
+      if (err) {
+        send404(res);
+        return;
+      }
+      try {
+        const ext = path.extname(resolved);
+        const type = MIMES[ext] || "application/octet-stream";
+        res.setHeader("Content-Type", type);
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        const stream = fs.createReadStream(resolved);
+        stream.on("error", () => send404(res));
+        res.on("error", () => stream.destroy());
+        stream.pipe(res);
+      } catch (e) {
+        send404(res);
+      }
+    });
+  } catch (e) {
+    send404(res);
+  }
 }
 
 app.prepare().then(() => {
   http
     .createServer((req, res) => {
-      const parsedUrl = parse(req.url || "/", true);
-      const pathname = parsedUrl.pathname || "/";
-      if (req.method === "GET" && pathname.startsWith("/_next/static/")) {
-        serveStatic(req, res, pathname);
-        return;
+      try {
+        const parsedUrl = parse(req.url || "/", true);
+        const pathname = parsedUrl.pathname || "/";
+        if (req.method === "GET" && pathname.startsWith("/_next/static/")) {
+          serveStatic(req, res, pathname);
+          return;
+        }
+        handle(req, res, parsedUrl);
+      } catch (e) {
+        send404(res);
       }
-      handle(req, res, parsedUrl);
     })
     .listen(port, () => {
-      console.log(`> Ready on http://localhost:${port}`);
+      console.log("> Ready on http://localhost:" + port);
     });
 });
