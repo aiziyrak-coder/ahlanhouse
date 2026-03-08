@@ -425,6 +425,21 @@ export default function ApartmentDetailPage() {
   );
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
 
+  const getAuthHeaders = useCallback(
+    (token = accessToken) => {
+      if (!token) {
+        console.error("Auth token is missing!");
+        return null;
+      }
+      return {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+    },
+    [accessToken]
+  );
+
   const sendTelegramNotification = useCallback(async (message: string) => {
     const headers = getAuthHeaders();
     if (!headers || !TELEGRAM_CHAT_ID) return;
@@ -442,21 +457,6 @@ export default function ApartmentDetailPage() {
       console.error("Telegram xabarini yuborishda xatolik:", error);
     }
   }, [getAuthHeaders]);
-
-  const getAuthHeaders = useCallback(
-    (token = accessToken) => {
-      if (!token) {
-        console.error("Auth token is missing!");
-        return null;
-      }
-      return {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-    },
-    [accessToken]
-  );
 
   const formatCurrency = useCallback(
     (amount: string | number | null | undefined) => {
