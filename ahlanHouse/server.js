@@ -42,10 +42,13 @@ function send404(res) {
 function serveStatic(req, res, urlPath) {
   try {
     const base = path.join(__dirname, ".next", "static");
-    const subPath = (urlPath || "")
+    let subPath = (urlPath || "")
       .replace(/^\/_next\/static\//, "")
       .replace(/\?.*$/, "")
       .trim();
+    try {
+      subPath = decodeURIComponent(subPath);
+    } catch (_) {}
     if (!subPath || subPath.includes("..")) {
       send404(res);
       return;

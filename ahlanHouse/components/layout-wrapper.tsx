@@ -12,7 +12,12 @@ function useChunkLoadErrorRecovery() {
     const key = "chunk-reload-done";
     const tryReload = (msg: string) => {
       if (!msg || typeof msg !== "string") return;
-      if (!msg.includes("ChunkLoadError") && !msg.includes("Loading chunk")) return;
+      const isChunkOrSuspense =
+        msg.includes("ChunkLoadError") ||
+        msg.includes("Loading chunk") ||
+        msg.includes("419") ||
+        msg.includes("Suspense boundary");
+      if (!isChunkOrSuspense) return;
       if (typeof window === "undefined" || window.sessionStorage?.getItem(key) === "1") return;
       window.sessionStorage.setItem(key, "1");
       window.location.reload();
