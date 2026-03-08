@@ -42,8 +42,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
   if (isLogin || isSotuvLogin) {
     return (
-      <div className="flex min-h-screen flex-col">
-        <div className="flex-1">{children}</div>
+      <div className="flex min-h-screen min-h-[100dvh] flex-col">
+        <div className="flex-1 min-h-0">{children}</div>
         <AppFooter />
       </div>
     );

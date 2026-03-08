@@ -9,7 +9,7 @@ const ThemeContext = React.createContext<{ theme: AppTheme }>({ theme: "colorful
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <ThemeContext.Provider value={{ theme: "colorful" }}>
-      <div data-theme="colorful" className="theme-wrapper min-h-screen flex flex-col">
+      <div data-theme="colorful" className="theme-wrapper min-h-screen min-h-[100dvh] flex flex-col">
         {children}
       </div>
     </ThemeContext.Provider>

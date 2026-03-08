@@ -87,11 +87,19 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    /* Mobil: scroll barcha sahifada ishlashi uchun */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 100%;
   }
   body {
     @apply text-foreground;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", system-ui, Roboto, sans-serif;
     background: transparent;
+    min-height: 100%;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
   /* Smooth transitions for buttons, links, cards */
   button, a, [role="button"] {
@@ -107,8 +115,10 @@
 }
 
 /* Asosiy orqa fon: och yashil, och ko'k, och sariq — uyg'un gradient, sekin animatsiya */
+/* 100dvh — mobil brauzerda address bar hisobga olinadi */
 .theme-wrapper {
   min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(
     160deg,
     hsl(148 52% 90%) 0%,
@@ -169,8 +179,49 @@
   .content-area {
     background: transparent;
     min-height: 100%;
+    min-height: 0; /* flex child scroll qilishi uchun (mobil) */
     perspective: 1200px;
     transform-style: preserve-3d;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+  }
+  /* Mobil: scroll qiladigan konteynerlar uchun (jadval, ro'yxat) */
+  .touch-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+  .custom-scrollbar {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-border;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  /* Har qanday overflow-auto uchun mobil touch scroll */
+  .overflow-touch,
+  .overflow-auto,
+  .overflow-x-auto,
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Gorizontal scroll (jadval, dock) — mobil touch */
+  .touch-scroll-horizontal {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  /* Notch / safe area — pastki navigatsiya */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
   .dark .content-area {
     background: transparent;

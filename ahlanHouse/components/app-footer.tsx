@@ -7,7 +7,7 @@ const FOOTER_LINK = "https://cdcgroup.uz";
 export function AppFooter() {
   return (
     <footer
-      className="fixed bottom-0 left-0 right-0 z-30 flex h-7 items-center justify-center border-t border-border/40 bg-background/95 py-1 text-center text-[11px] text-muted-foreground backdrop-blur-sm"
+      className="fixed bottom-0 left-0 right-0 z-30 flex h-7 items-center justify-center border-t border-border/40 bg-background/95 py-1 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] text-center text-[11px] text-muted-foreground backdrop-blur-sm"
       role="contentinfo"
     >
       <p className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0 px-2 leading-none">

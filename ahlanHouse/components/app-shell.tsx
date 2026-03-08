@@ -41,7 +41,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen flex-col bg-transparent">
+    <div className="flex min-h-screen min-h-[100dvh] flex-col bg-transparent">
       <a href="#main-content" className="skip-link">
         Asosiy kontentga o‘tish
       </a>
@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main content — pastda dok va footer uchun joy */}
-      <main id="main-content" className="content-area flex-1 overflow-auto p-6 pb-28" tabIndex={-1}>
+      <main id="main-content" className="content-area flex-1 min-h-0 overflow-auto overflow-x-hidden p-4 sm:p-6 pb-28" tabIndex={-1}>
         <div className="app-page">{children}</div>
       </main>
 
@@ -73,10 +73,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Bottom dock — sidebar footerdan yuqorida, ustma-ust tushmasin */}
       <nav
-        className="fixed bottom-10 left-1/2 z-50 -translate-x-1/2"
+        className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 safe-area-pb"
         aria-label="Bosh menyu"
       >
-        <div className="dock-container flex items-end gap-1 rounded-2xl border border-white/40 bg-gradient-to-r from-white/70 via-white/60 to-white/70 px-2 py-2 shadow-xl shadow-blue-500/10 backdrop-blur-2xl transition-all duration-300 hover:shadow-2xl hover:shadow-violet-500/15">
+        <div className="dock-container flex items-end gap-0.5 sm:gap-1 rounded-2xl border border-white/40 bg-gradient-to-r from-white/70 via-white/60 to-white/70 px-1.5 py-1.5 sm:px-2 sm:py-2 shadow-xl shadow-blue-500/10 backdrop-blur-2xl transition-all duration-300 hover:shadow-2xl hover:shadow-violet-500/15 overflow-x-auto overflow-y-hidden max-w-[100vw] touch-scroll-horizontal">
           {routes.map((route) => {
             const active = pathname === route.href || (route.href !== "/" && pathname.startsWith(route.href));
             return (
@@ -84,7 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={route.href}
                 href={route.href}
                 className={cn(
-                  "dock-icon flex flex-col items-center justify-center rounded-xl p-2.5 text-center transition-all duration-200 ease-out min-w-[2.75rem]",
+                  "dock-icon flex flex-col items-center justify-center rounded-xl p-2 sm:p-2.5 text-center transition-all duration-200 ease-out min-w-[2.5rem] sm:min-w-[2.75rem] shrink-0",
                   active
                     ? "bg-gradient-to-br from-blue-500/25 to-violet-500/20 text-blue-600"
                     : "text-slate-600 hover:bg-blue-500/10 hover:text-blue-600"

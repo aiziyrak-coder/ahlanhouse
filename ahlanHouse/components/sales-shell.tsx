@@ -45,7 +45,7 @@ export function SalesShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+    <div className="flex min-h-screen min-h-[100dvh] flex-col bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       <a href="#main-content" className="skip-link">
         Asosiy kontentga o&apos;tish
       </a>
@@ -74,14 +74,14 @@ export function SalesShell({ children }: { children: React.ReactNode }) {
         </button>
       </header>
 
-      <main id="main-content" className="flex-1 overflow-auto p-6 pb-28" tabIndex={-1}>
+      <main id="main-content" className="flex-1 min-h-0 overflow-auto overflow-x-hidden p-4 sm:p-6 pb-28" tabIndex={-1}>
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
 
       <AppFooter />
 
-      <nav className="fixed bottom-10 left-1/2 z-50 -translate-x-1/2" aria-label="Sotuv menyu">
-        <div className="flex items-end gap-1 rounded-2xl border border-emerald-200/50 bg-white/90 px-2 py-2 shadow-xl shadow-emerald-500/10 backdrop-blur-xl dark:border-emerald-800/30 dark:bg-slate-900/90">
+      <nav className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 safe-area-pb" aria-label="Sotuv menyu">
+        <div className="flex items-end gap-0.5 sm:gap-1 rounded-2xl border border-emerald-200/50 bg-white/90 px-1.5 py-1.5 sm:px-2 sm:py-2 shadow-xl shadow-emerald-500/10 backdrop-blur-xl dark:border-emerald-800/30 dark:bg-slate-900/90 overflow-x-auto overflow-y-hidden max-w-[100vw] touch-scroll-horizontal">
           {salesRoutes.map((route) => {
             const active =
               pathname === route.href ||
@@ -91,7 +91,7 @@ export function SalesShell({ children }: { children: React.ReactNode }) {
                 key={route.href}
                 href={route.href}
                 className={cn(
-                  "flex flex-col items-center justify-center rounded-xl p-2.5 min-w-[2.75rem] transition-all",
+                  "flex flex-col items-center justify-center rounded-xl p-2 sm:p-2.5 min-w-[2.5rem] sm:min-w-[2.75rem] shrink-0 transition-all",
                   active
                     ? "bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-600 dark:text-emerald-400"
                     : "text-slate-500 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400"

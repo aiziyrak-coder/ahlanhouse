@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { ThemeProvider } from "@/lib/theme-context";
@@ -8,6 +8,15 @@ export const metadata: Metadata = {
   description: "Boshqaruv tizimi",
   generator: "Ahlan.uz",
   icons: { icon: "/icon.svg" },
+};
+
+/** Mobil qurilmalarda to'g'ri masshtab va scroll uchun */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
