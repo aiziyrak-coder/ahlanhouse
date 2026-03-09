@@ -90,7 +90,14 @@ function serveStatic(req, res, urlPath) {
   }
 }
 
-/** Build ID yo'l orqali (query emas) — URL da ?ver= bo'lmasin, regex flags xatosi chiqmasin. */
+/** Birinchi script: ver= va /_/xxx ni URL dan olib tashlash — barcha skriptlardan oldin (regex flags xato bo'lmasin). */
+const INJECT_STRIP_SCRIPT =
+  "<script>(function(){var s=location.search,p=location.pathname;" +
+  "if(s&&s.indexOf('ver=')!==-1){var q=new URLSearchParams(s);q.delete('ver');var t=q.toString();history.replaceState(null,'',p+(t?'?'+t:'')+location.hash);}" +
+  "if(p.indexOf('/_/')===0){var r=p.replace(/^\\/_\\/[^/]+/,'')||'/';history.replaceState(null,'',r+location.search+location.hash);}" +
+  "})();</script>";
+
+/** Build ID yo'l orqali (query emas) — URL da ?ver= bo'lmasin. */
 function sendLoaderHtml(res, pathname, query, buildId) {
   const safeId = String(buildId).replace(/[<>"'\s/]/g, "");
   const targetPath = "/_/" + safeId + (pathname === "/" ? "" : pathname);
@@ -113,6 +120,33 @@ function sendLoaderHtml(res, pathname, query, buildId) {
   res.end(html);
 }
 
+/** HTML javobga birinchi scriptni <head> dan keyin qo'shadi — ver= va /_/ strip barcha skriptlardan oldin. */
+function bufferAndInjectStripScript(req, res, parsedUrl) {
+  const chunks = [];
+  const origWrite = res.write.bind(res);
+  const origEnd = res.end.bind(res);
+  res.write = function (chunk, encoding, cb) {
+    if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding || "utf8"));
+    if (typeof encoding === "function") cb = encoding;
+    if (cb) process.nextTick(cb);
+    return true;
+  };
+  res.end = function (chunk, encoding, cb) {
+    if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding || "utf8"));
+    let body = Buffer.concat(chunks).toString("utf8");
+    if (body.indexOf("<!DOCTYPE html") !== -1 && body.indexOf("<head>") !== -1) {
+      body = body.replace(/<head>/i, "<head>" + INJECT_STRIP_SCRIPT);
+    }
+    res.removeHeader("Transfer-Encoding");
+    res.setHeader("Content-Length", String(Buffer.byteLength(body, "utf8")));
+    res.write = origWrite;
+    res.end = origEnd;
+    origWrite(body, "utf8");
+    origEnd(cb);
+  };
+  handle(req, res, parsedUrl);
+}
+
 app.prepare().then(() => {
   http
     .createServer((req, res) => {
@@ -133,7 +167,7 @@ app.prepare().then(() => {
             const restPath = pathBuildMatch[2] || "/";
             if (pathBuildId === BUILD_ID) {
               const rewrite = { ...parsedUrl, pathname: restPath === "/" ? "/" : restPath, path: restPath };
-              handle(req, res, rewrite);
+              bufferAndInjectStripScript(req, res, rewrite);
               return;
             }
           }
