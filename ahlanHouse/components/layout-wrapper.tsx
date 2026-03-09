@@ -6,24 +6,36 @@ import { AppShell } from "@/components/app-shell";
 import { SalesShell } from "@/components/sales-shell";
 import { AppFooter } from "@/components/app-footer";
 
-/** Deploy dan keyin eski chunk 404/500 bo'lsa bir marta qattiq yangilash (ChunkLoadError bartaraf). */
+/** Deploy dan keyin eski chunk 404 bo'lsa cache-busting reload — yangi HTML va chunk'lar yuklanadi, xato chiqmasin. */
 function useChunkLoadErrorRecovery() {
   useEffect(() => {
-    const key = "chunk-reload-done";
+    const RELOAD_COOLDOWN_MS = 8000;
+    const key = "chunk-reload-at";
+
     const tryReload = (msg: string) => {
       if (!msg || typeof msg !== "string") return;
-      const isChunkOrSuspense =
+      const isChunkOr404 =
         msg.includes("ChunkLoadError") ||
         msg.includes("Loading chunk") ||
         msg.includes("419") ||
-        msg.includes("Suspense boundary");
-      if (!isChunkOrSuspense) return;
-      if (typeof window === "undefined" || window.sessionStorage?.getItem(key) === "1") return;
-      window.sessionStorage.setItem(key, "1");
-      window.location.reload();
+        msg.includes("Suspense boundary") ||
+        /Failed to load resource.*404/.test(msg) ||
+        /_next\/static\//.test(msg);
+      if (!isChunkOr404) return;
+      const now = Date.now();
+      const last = parseInt(sessionStorage?.getItem(key) ?? "0", 10);
+      if (now - last < RELOAD_COOLDOWN_MS) return;
+      sessionStorage?.setItem(key, String(now));
+      const url = new URL(location.href);
+      url.searchParams.set("_cb", String(now));
+      location.replace(url.pathname + url.search + url.hash);
     };
+
     const onError = (e: ErrorEvent) => tryReload(e?.message ?? "");
-    const onRejection = (e: PromiseRejectionEvent) => tryReload(e?.reason?.message ?? String(e?.reason ?? ""));
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const msg = e?.reason?.message ?? String(e?.reason ?? "");
+      tryReload(msg);
+    };
     window.addEventListener("error", onError);
     window.addEventListener("unhandledrejection", onRejection);
     return () => {
