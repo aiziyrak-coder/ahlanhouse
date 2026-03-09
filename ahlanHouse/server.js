@@ -93,7 +93,12 @@ function serveStatic(req, res, urlPath) {
 function redirectToBuildUrl(res, pathname, query, buildId) {
   const q = { ...query, v: buildId };
   const search = "?" + Object.entries(q).map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&");
-  res.writeHead(302, { Location: pathname + search });
+  res.writeHead(302, {
+    Location: pathname + search,
+    "Cache-Control": "no-store, no-cache, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  });
   res.end();
 }
 
