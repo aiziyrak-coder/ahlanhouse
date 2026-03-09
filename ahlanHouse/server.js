@@ -90,7 +90,7 @@ function serveStatic(req, res, urlPath) {
   }
 }
 
-/** v= yo'q yoki noto'g'ri bo'lsa — chunk so'ramaydigan loader HTML (cache lanmas, keyin to'g'ri v= ga yo'naltiradi). */
+/** ver= yo'q yoki noto'g'ri bo'lsa — chunk so'ramaydigan loader HTML. Parametr 'v' emas 'ver' (v regex flag bo'lgani uchun xato bermaslik). */
 function sendLoaderHtml(res, pathname, query, buildId) {
   const safeId = String(buildId).replace(/[<>"']/g, "");
   const html = [
@@ -102,7 +102,7 @@ function sendLoaderHtml(res, pathname, query, buildId) {
     "<script>",
     "(function(){",
     "var p=location.pathname,h=location.hash||'',s=new URLSearchParams(location.search);",
-    "s.set('v','" + safeId + "');",
+    "s.set('ver','" + safeId + "');",
     "location.replace(p+'?'+s.toString()+h);",
     "})();",
     "</script></body></html>",
@@ -130,7 +130,7 @@ app.prepare().then(() => {
         }
 
         if (req.method === "GET" && !pathname.startsWith("/_next") && !pathname.startsWith("/api")) {
-          if (query.v !== BUILD_ID) {
+          if (query.ver !== BUILD_ID) {
             sendLoaderHtml(res, pathname, query, BUILD_ID);
             return;
           }
@@ -142,6 +142,6 @@ app.prepare().then(() => {
       }
     })
     .listen(port, () => {
-      console.log("> Ready on http://localhost:" + port + " (v=" + BUILD_ID + ")");
+      console.log("> Ready on http://localhost:" + port + " (ver=" + BUILD_ID + ")");
     });
 });
