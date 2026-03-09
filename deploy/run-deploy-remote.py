@@ -111,7 +111,10 @@ def main():
         run(ssh, "ln -sf /etc/nginx/sites-available/ahlan /etc/nginx/sites-enabled/ahlan 2>/dev/null; true", check=False)
         run(ssh, "nginx -t 2>&1 && systemctl reload nginx 2>&1 || true", check=False)
 
-        print("\nTugadi. Backend :8000, Frontend PM2 (ahlan-house). ahlan.uz: _next/static diskdan, HTML no-cache.")
+        print("\n[6] Tekshiruv: frontend BUILD_ID.")
+        run(ssh, f"test -f {FRONTEND}/.next/BUILD_ID && echo BUILD_ID ok || echo BUILD_ID yoq", check=False)
+
+        print("\nTugadi. Migrate, build, PM2 restart, nginx reload bajarildi.")
     finally:
         ssh.close()
 
