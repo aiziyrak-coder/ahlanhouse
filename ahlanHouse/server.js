@@ -90,16 +90,30 @@ function serveStatic(req, res, urlPath) {
   }
 }
 
-function redirectToBuildUrl(res, pathname, query, buildId) {
-  const q = { ...query, v: buildId };
-  const search = "?" + Object.entries(q).map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&");
-  res.writeHead(302, {
-    Location: pathname + search,
+/** v= yo'q yoki noto'g'ri bo'lsa — chunk so'ramaydigan loader HTML (cache lanmas, keyin to'g'ri v= ga yo'naltiradi). */
+function sendLoaderHtml(res, pathname, query, buildId) {
+  const safeId = String(buildId).replace(/[<>"']/g, "");
+  const html = [
+    "<!DOCTYPE html><html><head>",
+    '<meta http-equiv="Cache-Control" content="no-store,no-cache,must-revalidate">',
+    '<meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">',
+    "<title>Yuklanmoqda...</title></head><body>",
+    "<p>Yuklanmoqda...</p>",
+    "<script>",
+    "(function(){",
+    "var p=location.pathname,h=location.hash||'',s=new URLSearchParams(location.search);",
+    "s.set('v','" + safeId + "');",
+    "location.replace(p+'?'+s.toString()+h);",
+    "})();",
+    "</script></body></html>",
+  ].join("");
+  res.writeHead(200, {
+    "Content-Type": "text/html; charset=utf-8",
     "Cache-Control": "no-store, no-cache, must-revalidate",
     Pragma: "no-cache",
     Expires: "0",
   });
-  res.end();
+  res.end(html);
 }
 
 app.prepare().then(() => {
@@ -117,7 +131,7 @@ app.prepare().then(() => {
 
         if (req.method === "GET" && !pathname.startsWith("/_next") && !pathname.startsWith("/api")) {
           if (query.v !== BUILD_ID) {
-            redirectToBuildUrl(res, pathname, query, BUILD_ID);
+            sendLoaderHtml(res, pathname, query, BUILD_ID);
             return;
           }
         }
