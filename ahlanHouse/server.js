@@ -90,9 +90,10 @@ function serveStatic(req, res, urlPath) {
   }
 }
 
-/** ver= yo'q yoki noto'g'ri bo'lsa — chunk so'ramaydigan loader HTML. Parametr 'v' emas 'ver' (v regex flag bo'lgani uchun xato bermaslik). */
+/** Build ID yo'l orqali (query emas) — URL da ?ver= bo'lmasin, regex flags xatosi chiqmasin. */
 function sendLoaderHtml(res, pathname, query, buildId) {
-  const safeId = String(buildId).replace(/[<>"']/g, "");
+  const safeId = String(buildId).replace(/[<>"'\s/]/g, "");
+  const targetPath = "/_/" + safeId + (pathname === "/" ? "" : pathname);
   const html = [
     "<!DOCTYPE html><html><head>",
     '<meta http-equiv="Cache-Control" content="no-store,no-cache,must-revalidate">',
@@ -100,11 +101,7 @@ function sendLoaderHtml(res, pathname, query, buildId) {
     "<title>Yuklanmoqda...</title></head><body>",
     "<p>Yuklanmoqda...</p>",
     "<script>",
-    "(function(){",
-    "var p=location.pathname,h=location.hash||'',s=new URLSearchParams(location.search);",
-    "s.set('ver','" + safeId + "');",
-    "location.replace(p+'?'+s.toString()+h);",
-    "})();",
+    "location.replace('" + targetPath.replace(/'/g, "\\'") + "'+(location.hash||''));",
     "</script></body></html>",
   ].join("");
   res.writeHead(200, {
@@ -130,10 +127,18 @@ app.prepare().then(() => {
         }
 
         if (req.method === "GET" && !pathname.startsWith("/_next") && !pathname.startsWith("/api")) {
-          if (query.ver !== BUILD_ID) {
-            sendLoaderHtml(res, pathname, query, BUILD_ID);
-            return;
+          const pathBuildMatch = pathname.match(/^\/_\/([^/]+)(\/.*)?$/);
+          if (pathBuildMatch) {
+            const pathBuildId = pathBuildMatch[1];
+            const restPath = pathBuildMatch[2] || "/";
+            if (pathBuildId === BUILD_ID) {
+              const rewrite = { ...parsedUrl, pathname: restPath === "/" ? "/" : restPath, path: restPath };
+              handle(req, res, rewrite);
+              return;
+            }
           }
+          sendLoaderHtml(res, pathname, query, BUILD_ID);
+          return;
         }
 
         handle(req, res, parsedUrl);

@@ -40,14 +40,13 @@ const CHUNK_RELOAD_SCRIPT = `
 })();
 `.replace(/<\/script>/gi, "<\\/script>");
 
-/** ver= ni URL dan darhol olib tashlash — hech qanday kod regex flag sifatida ishlatolmasin. */
-const STRIP_VER_SCRIPT = `
+/** /_/BUILD_ID ni pathdan olib tashlash — URL bar faqat / yoki /login ko'rinsin, query/regex xato bo'lmasin. */
+const STRIP_PATH_PREFIX_SCRIPT = `
 (function(){
-  var s=new URLSearchParams(location.search);
-  if(s.has('ver')){
-    s.delete('ver');
-    var q=s.toString();
-    history.replaceState(null,'',location.pathname+(q?'?'+q:'')+location.hash);
+  var p=location.pathname;
+  if(p.indexOf('/_/')===0){
+    var rest=p.replace(/^\\/_\\/[^/]+/,'')||'/';
+    history.replaceState(null,'',rest+location.search+location.hash);
   }
 })();
 `.replace(/<\/script>/gi, "<\\/script>");
@@ -59,7 +58,7 @@ export default function RootLayout({
     <html lang="uz">
       <head>
         <script dangerouslySetInnerHTML={{ __html: CHUNK_RELOAD_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: STRIP_VER_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: STRIP_PATH_PREFIX_SCRIPT }} />
       </head>
       <body className="min-h-screen antialiased">
         <ThemeProvider>
