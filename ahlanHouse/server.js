@@ -1,6 +1,5 @@
 /**
- * Custom Next.js server: /_next/static/* diskdan xizmat qiladi, fayl yo'q yoki xato bo'lsa 404 (500 hech qachon emas).
- * ChunkLoadError va deploy keyin eski chunk so'rovlari 404 qaytadi, brauzer yangilash ishlaydi.
+ * Custom Next.js server: /_next/static/* diskdan; document so'rovlariga ?v=BUILD_ID — deploy dan keyin yangi HTML, chunk 404 yo'q.
  */
 const http = require("http");
 const fs = require("fs");
@@ -13,6 +12,14 @@ const port = parseInt(process.env.PORT || "3000", 10);
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
+
+/** Har bir build uchun bitta — document cache bust, eski chunk 404 chiqmasin */
+let BUILD_ID = "";
+try {
+  BUILD_ID = fs.readFileSync(path.join(__dirname, ".next", "BUILD_ID"), "utf8").trim();
+} catch (_) {
+  BUILD_ID = String(Date.now());
+}
 
 const MIMES = {
   ".js": "application/javascript",
@@ -83,22 +90,39 @@ function serveStatic(req, res, urlPath) {
   }
 }
 
+function redirectToBuildUrl(res, pathname, query, buildId) {
+  const q = { ...query, v: buildId };
+  const search = "?" + Object.entries(q).map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&");
+  res.writeHead(302, { Location: pathname + search });
+  res.end();
+}
+
 app.prepare().then(() => {
   http
     .createServer((req, res) => {
       try {
         const parsedUrl = parse(req.url || "/", true);
         const pathname = parsedUrl.pathname || "/";
+        const query = parsedUrl.query || {};
+
         if (req.method === "GET" && pathname.startsWith("/_next/static/")) {
           serveStatic(req, res, pathname);
           return;
         }
+
+        if (req.method === "GET" && !pathname.startsWith("/_next") && !pathname.startsWith("/api")) {
+          if (query.v !== BUILD_ID) {
+            redirectToBuildUrl(res, pathname, query, BUILD_ID);
+            return;
+          }
+        }
+
         handle(req, res, parsedUrl);
       } catch (e) {
         send404(res);
       }
     })
     .listen(port, () => {
-      console.log("> Ready on http://localhost:" + port);
+      console.log("> Ready on http://localhost:" + port + " (v=" + BUILD_ID + ")");
     });
 });
