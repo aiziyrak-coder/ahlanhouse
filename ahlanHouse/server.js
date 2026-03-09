@@ -134,8 +134,8 @@ function bufferAndInjectStripScript(req, res, parsedUrl) {
   res.end = function (chunk, encoding, cb) {
     if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding || "utf8"));
     let body = Buffer.concat(chunks).toString("utf8");
-    if (body.indexOf("<!DOCTYPE html") !== -1 && body.indexOf("<head>") !== -1) {
-      body = body.replace(/<head>/i, "<head>" + INJECT_STRIP_SCRIPT);
+    if (body.indexOf("<!DOCTYPE html") !== -1 && /<head[\s>]/.test(body)) {
+      body = body.replace(/<head[^>]*>/i, "$&" + INJECT_STRIP_SCRIPT);
     }
     res.removeHeader("Transfer-Encoding");
     res.setHeader("Content-Length", String(Buffer.byteLength(body, "utf8")));
