@@ -40,6 +40,18 @@ const CHUNK_RELOAD_SCRIPT = `
 })();
 `.replace(/<\/script>/gi, "<\\/script>");
 
+/** ver= ni URL dan darhol olib tashlash — hech qanday kod regex flag sifatida ishlatolmasin. */
+const STRIP_VER_SCRIPT = `
+(function(){
+  var s=new URLSearchParams(location.search);
+  if(s.has('ver')){
+    s.delete('ver');
+    var q=s.toString();
+    history.replaceState(null,'',location.pathname+(q?'?'+q:'')+location.hash);
+  }
+})();
+`.replace(/<\/script>/gi, "<\\/script>");
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -47,6 +59,7 @@ export default function RootLayout({
     <html lang="uz">
       <head>
         <script dangerouslySetInnerHTML={{ __html: CHUNK_RELOAD_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: STRIP_VER_SCRIPT }} />
       </head>
       <body className="min-h-screen antialiased">
         <ThemeProvider>
