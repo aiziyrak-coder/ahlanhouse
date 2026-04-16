@@ -12,16 +12,20 @@ import {
   FileSignature,
   LogOut,
   Building2,
+  Calculator,
+  Search,
 } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { AppFooter } from "@/components/app-footer";
 
 const salesRoutes = [
   { href: "/sotuv", label: "Bosh sahifa", icon: LayoutDashboard },
+  { href: "/sotuv/qidiruv", label: "Qidiruv", icon: Search },
   { href: "/sotuv/obyektlar", label: "Obyektlar va 3D", icon: Building },
   { href: "/sotuv/uylar", label: "Uylar", icon: Home },
   { href: "/sotuv/mijozlar", label: "Mijozlar", icon: Users },
   { href: "/sotuv/shartnomalar", label: "Shartnomalar", icon: FileSignature },
+  { href: "/sotuv/kalkulyator", label: "Kalkulyator", icon: Calculator },
 ];
 
 export function SalesShell({ children }: { children: React.ReactNode }) {
@@ -84,7 +88,7 @@ export function SalesShell({ children }: { children: React.ReactNode }) {
           {salesRoutes.map((route) => {
             const active =
               pathname === route.href ||
-              (route.href !== "/sotuv" && pathname.startsWith(route.href));
+              (route.href !== "/sotuv" && pathname.startsWith(`${route.href}/`));
             return (
               <Link
                 key={route.href}

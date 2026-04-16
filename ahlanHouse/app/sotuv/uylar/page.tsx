@@ -6,6 +6,23 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -16,8 +33,9 @@ import {
 } from "@/components/ui/select";
 import { SmartFilterBar } from "@/components/smart-filter-bar";
 import { getApiBaseUrl, getApiRoot, clearAuthAndRedirect } from "@/app/lib/api";
+import { getCompareApartmentIds, toggleCompareApartmentId, clearCompareApartments } from "@/app/lib/sotuv-storage";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Layers, X, Glasses, Maximize2, ChevronLeft, ChevronRight, Smartphone } from "lucide-react";
+import { Loader2, Layers, X, Glasses, Maximize2, ChevronLeft, ChevronRight, Smartphone, GitCompare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Apartment {
@@ -86,6 +104,12 @@ export default function SotuvUylarPage() {
   const [modelLoading, setModelLoading] = useState(false);
   const [viewerKey, setViewerKey] = useState(0);
   const viewerContainerRef = useRef<HTMLDivElement>(null);
+  const [compareIds, setCompareIds] = useState<number[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
+
+  useEffect(() => {
+    setCompareIds(getCompareApartmentIds());
+  }, []);
 
   const getHeaders = useCallback(() => {
     const token = localStorage.getItem("access_token");
@@ -252,9 +276,21 @@ export default function SotuvUylarPage() {
 
       {/* Chap: filtrlash va qavatlar — faqat shu joy scroll */}
       <aside className="w-full md:w-[50%] md:max-w-[520px] flex flex-col min-h-0 overflow-hidden border-r">
-        <div className="p-4 border-b bg-muted/30 shrink-0">
-          <h1 className="text-xl font-bold">Uylar</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Kartani bosing — o&apos;ngda 3D model almashtiradi</p>
+        <div className="p-4 border-b bg-muted/30 shrink-0 space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h1 className="text-xl font-bold">Uylar</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Kartani bosing — 3D. Checkbox: taqqoslash (3 tagacha).
+              </p>
+            </div>
+            {compareIds.length > 0 && (
+              <Button type="button" size="sm" variant="secondary" className="gap-1" onClick={() => setCompareOpen(true)} disabled={compareIds.length < 2}>
+                <GitCompare className="h-4 w-4" />
+                Taqqoslash ({compareIds.length})
+              </Button>
+            )}
+          </div>
         </div>
         <div className="p-3 border-b shrink-0">
           <SmartFilterBar
@@ -340,23 +376,44 @@ export default function SotuvUylarPage() {
               <CardContent className="p-2">
                 <div className="flex flex-wrap gap-1.5">
                   {list.map((apt) => (
-                    <button
-                    key={apt.id}
-                    type="button"
-                    onClick={() => { setModelLoading(!!(apt.model_3d_url || apt.model_3d || apt.internal_model_3d_url)); setSelectedApartment(apt); }}
-                      className={`flex min-w-0 shrink-0 w-[96px] sm:w-[100px] rounded-md border bg-card hover:bg-muted/60 active:scale-[0.98] transition-all overflow-hidden text-left ${selectedApartment?.id === apt.id ? "ring-2 ring-emerald-500 border-emerald-500/50" : "hover:border-emerald-400/50"}`}
+                    <div
+                      key={apt.id}
+                      className={`flex min-w-0 shrink-0 w-[104px] sm:w-[108px] rounded-md border bg-card overflow-hidden transition-all ${
+                        selectedApartment?.id === apt.id ? "ring-2 ring-emerald-500 border-emerald-500/50" : "hover:border-emerald-400/50"
+                      }`}
                     >
-                      <div className="flex flex-col w-full p-1.5">
+                      <button
+                        type="button"
+                        className="flex flex-1 min-w-0 flex-col p-1.5 text-left hover:bg-muted/60 active:scale-[0.98]"
+                        onClick={() => {
+                          setModelLoading(!!(apt.model_3d_url || apt.model_3d || apt.internal_model_3d_url));
+                          setSelectedApartment(apt);
+                        }}
+                      >
                         <div className="flex items-center justify-between gap-0.5">
                           <span className="font-semibold text-[11px] truncate">№{apt.room_number}</span>
                           <Badge variant={apt.status === "bosh" ? "default" : "secondary"} className="text-[8px] px-1 py-0 h-3.5 shrink-0">
                             {STATUS_OPTIONS[apt.status] || apt.status}
                           </Badge>
                         </div>
-                        <p className="text-[9px] text-muted-foreground mt-0.5">{apt.rooms}x · {apt.area} m²</p>
+                        <p className="text-[9px] text-muted-foreground mt-0.5">
+                          {apt.rooms}x · {apt.area} m²
+                        </p>
                         <p className="font-semibold text-emerald-600 text-[10px] mt-0.5">{formatPrice(apt.price)}</p>
+                      </button>
+                      <div
+                        className="flex shrink-0 items-start border-l bg-muted/20 px-0.5 py-1"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={compareIds.includes(apt.id)}
+                          onCheckedChange={() => setCompareIds(toggleCompareApartmentId(apt.id))}
+                          aria-label="Taqqoslashga qo'shish"
+                          className="mt-0.5"
+                        />
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </CardContent>
@@ -464,6 +521,70 @@ export default function SotuvUylarPage() {
           </AnimatePresence>
         </div>
       </main>
+
+      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GitCompare className="h-5 w-5" />
+              Xonadonlarni taqqoslash
+            </DialogTitle>
+            <DialogDescription>
+              Mijozga bir vaqtda narx, maydon va holatni ko&apos;rsatish uchun jadval.
+            </DialogDescription>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Xona</TableHead>
+                <TableHead>Obyekt</TableHead>
+                <TableHead>Qavat</TableHead>
+                <TableHead>Xonalar</TableHead>
+                <TableHead>Maydon</TableHead>
+                <TableHead className="text-right">Narx</TableHead>
+                <TableHead>Holat</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {compareIds
+                .map((id) => apartments.find((a) => a.id === id))
+                .filter((a): a is Apartment => Boolean(a))
+                .map((a) => (
+                  <TableRow key={a.id}>
+                    <TableCell className="font-medium">№{a.room_number}</TableCell>
+                    <TableCell className="max-w-[140px] truncate">{a.object_name || "—"}</TableCell>
+                    <TableCell>{a.floor}</TableCell>
+                    <TableCell>{a.rooms}</TableCell>
+                    <TableCell>{a.area} m²</TableCell>
+                    <TableCell className="text-right font-semibold text-emerald-600">{formatPrice(a.price)}</TableCell>
+                    <TableCell>
+                      <Badge variant={a.status === "bosh" ? "default" : "secondary"} className="text-xs">
+                        {STATUS_OPTIONS[a.status] || a.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                clearCompareApartments();
+                setCompareIds([]);
+                setCompareOpen(false);
+              }}
+            >
+              Tanlovlarni tozalash
+            </Button>
+            <Button type="button" size="sm" onClick={() => setCompareOpen(false)}>
+              Yopish
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

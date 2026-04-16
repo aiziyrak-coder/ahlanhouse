@@ -15,6 +15,7 @@ import {
 import { SmartFilterBar } from "@/components/smart-filter-bar";
 import { getApiBaseUrl, clearAuthAndRedirect } from "@/app/lib/api";
 import { toast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, FileSignature, Calendar } from "lucide-react";
 
 interface Payment {
@@ -37,12 +38,20 @@ const PAYMENT_TYPES: Record<string, string> = {
   band: "Band",
 };
 
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  "": "Barcha holatlar",
+  pending: "Kutilmoqda",
+  paid: "To'langan",
+  overdue: "Muddati o'tgan",
+};
+
 export default function SotuvShartnomalarPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [minAmount, setMinAmount] = useState("");
@@ -62,7 +71,7 @@ export default function SotuvShartnomalarPage() {
     const headers = getHeaders();
     if (!headers) return;
     setLoading(true);
-    fetch(`${getApiBaseUrl()}/payments/?ordering=-created_at&page_size=500`, { headers })
+    fetch(`${getApiBaseUrl()}/payments/?ordering=-created_at&page_size=1000`, { headers })
       .then((r) => {
         if (r.status === 401) clearAuthAndRedirect(router, true);
         return r.json();
@@ -84,6 +93,7 @@ export default function SotuvShartnomalarPage() {
       );
     }
     if (filterType) list = list.filter((p) => p.payment_type === filterType);
+    if (filterPaymentStatus) list = list.filter((p) => p.status === filterPaymentStatus);
     if (dateFrom) {
       const from = new Date(dateFrom).getTime();
       list = list.filter((p) => new Date(p.created_at).getTime() >= from);
@@ -97,22 +107,25 @@ export default function SotuvShartnomalarPage() {
     if (min != null && !isNaN(min)) list = list.filter((p) => Number(p.paid_amount) >= min);
     if (max != null && !isNaN(max)) list = list.filter((p) => Number(p.paid_amount) <= max);
     return list;
-  }, [payments, search, filterType, dateFrom, dateTo, minAmount, maxAmount]);
+  }, [payments, search, filterType, filterPaymentStatus, dateFrom, dateTo, minAmount, maxAmount]);
 
   const chips = useMemo(() => {
     const c: { id: string; label: string; value?: string }[] = [];
     if (search.trim()) c.push({ id: "search", label: "Qidiruv", value: search.trim() });
     if (filterType) c.push({ id: "type", label: "Tur", value: PAYMENT_TYPES[filterType] || filterType });
+    if (filterPaymentStatus)
+      c.push({ id: "pstatus", label: "Holat", value: PAYMENT_STATUS_LABELS[filterPaymentStatus] || filterPaymentStatus });
     if (dateFrom) c.push({ id: "dateFrom", label: "Dan", value: dateFrom });
     if (dateTo) c.push({ id: "dateTo", label: "Gacha", value: dateTo });
     if (minAmount) c.push({ id: "minAmount", label: "Min summa", value: `${minAmount} $` });
     if (maxAmount) c.push({ id: "maxAmount", label: "Maks summa", value: `${maxAmount} $` });
     return c;
-  }, [search, filterType, dateFrom, dateTo, minAmount, maxAmount]);
+  }, [search, filterType, filterPaymentStatus, dateFrom, dateTo, minAmount, maxAmount]);
 
   const clearAll = () => {
     setSearch("");
     setFilterType("");
+    setFilterPaymentStatus("");
     setDateFrom("");
     setDateTo("");
     setMinAmount("");
@@ -122,6 +135,7 @@ export default function SotuvShartnomalarPage() {
   const removeChip = (id: string) => {
     if (id === "search") setSearch("");
     else if (id === "type") setFilterType("");
+    else if (id === "pstatus") setFilterPaymentStatus("");
     else if (id === "dateFrom") setDateFrom("");
     else if (id === "dateTo") setDateTo("");
     else if (id === "minAmount") setMinAmount("");
@@ -215,6 +229,19 @@ export default function SotuvShartnomalarPage() {
               ))}
           </SelectContent>
         </Select>
+        <Select value={filterPaymentStatus || "all"} onValueChange={(v) => setFilterPaymentStatus(v === "all" ? "" : v)}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Shartnoma holati" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Barcha holatlar</SelectItem>
+            {Object.entries(PAYMENT_STATUS_LABELS)
+              .filter(([k]) => k !== "")
+              .map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v}</SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
         <Input
           type="date"
           placeholder="Dan"
@@ -265,7 +292,13 @@ export default function SotuvShartnomalarPage() {
                   <p className="font-medium">{p.user_fio || `To'lov #${p.id}`}</p>
                   <p className="text-sm text-muted-foreground">{p.apartment_info || `Xonadon #${p.apartment}`}</p>
                 </div>
-                <div className="text-right text-sm">
+                <div className="text-right text-sm space-y-1">
+                  <Badge
+                    variant={p.status === "paid" ? "default" : p.status === "overdue" ? "destructive" : "secondary"}
+                    className="text-[10px]"
+                  >
+                    {PAYMENT_STATUS_LABELS[p.status] || p.status}
+                  </Badge>
                   <p>{formatMoney(p.paid_amount)} to&apos;langan</p>
                   <p className="text-muted-foreground">{formatDate(p.created_at)} · {p.payment_type}</p>
                 </div>
