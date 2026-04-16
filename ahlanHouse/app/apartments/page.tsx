@@ -444,22 +444,6 @@ export default function ApartmentsPage() {
 
   useEffect(() => { if (accessToken) fetchProperties(); }, [accessToken, fetchProperties]);
 
-  /** Ziyrak: URL dan property, rooms, status filtrlarni qo'llash */
-  useEffect(() => {
-    const prop = searchParams.get("property") || searchParams.get("propertyId") || "";
-    const rooms = searchParams.get("rooms") || "";
-    const status = searchParams.get("status") || "";
-    if (prop || rooms || status) {
-      setFilters((prev) => ({
-        ...prev,
-        ...(prop && { property: prop }),
-        ...(rooms && { rooms }),
-        ...(status && { status }),
-      }));
-      setCurrentPage(1);
-    }
-  }, [searchParams]);
-
   useEffect(() => { if (accessToken && (properties.length > 0 || !propertyIdParam)) fetchApartments(); }, [accessToken, filters, propertyIdParam, fetchApartments, properties, currentPage]);
 
   const handleFilterChange = (name: string, value: string) => {

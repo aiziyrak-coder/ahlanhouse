@@ -147,6 +147,16 @@ function bufferAndInjectStripScript(req, res, parsedUrl) {
   handle(req, res, parsedUrl);
 }
 
+/** ver= query barcha document so'rovlarida redirect orqali olib tashlanadi — brauzer hech qachon ver= ko'rmaydi, RegExp flags xato bo'lmasin. */
+function redirectStripVer(res, pathname, query, hash) {
+  const q = { ...query };
+  delete q.ver;
+  const qs = Object.keys(q).length ? "?" + new URLSearchParams(q).toString() : "";
+  const loc = pathname + qs + (hash || "");
+  res.writeHead(302, { Location: loc });
+  res.end();
+}
+
 app.prepare().then(() => {
   http
     .createServer((req, res) => {
@@ -154,6 +164,7 @@ app.prepare().then(() => {
         const parsedUrl = parse(req.url || "/", true);
         const pathname = parsedUrl.pathname || "/";
         const query = parsedUrl.query || {};
+        const hasVer = query && Object.prototype.hasOwnProperty.call(query, "ver");
 
         if (req.method === "GET" && pathname.startsWith("/_next/static/")) {
           serveStatic(req, res, pathname);
@@ -161,6 +172,10 @@ app.prepare().then(() => {
         }
 
         if (req.method === "GET" && !pathname.startsWith("/_next") && !pathname.startsWith("/api")) {
+          if (hasVer) {
+            redirectStripVer(res, pathname, query, parsedUrl.hash || "");
+            return;
+          }
           const pathBuildMatch = pathname.match(/^\/_\/([^/]+)(\/.*)?$/);
           if (pathBuildMatch) {
             const pathBuildId = pathBuildMatch[1];

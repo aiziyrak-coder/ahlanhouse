@@ -50,7 +50,7 @@ def main():
         run(ssh, f"cd {PROJECT} && git pull origin main 2>/dev/null || true")
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && pip install -q -r requirements.txt 2>/dev/null")
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py migrate --noinput 2>/dev/null")
-        run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py create_sotuv_demo_user 2>/dev/null")
+        run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py create_demo_users 2>/dev/null")
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py collectstatic --noinput --clear 2>/dev/null || true")
 
         print("\n=== 6. Gunicorn ishga tushirish (faqat ahlanhouse/ahlanApi) ===")

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { SortableTableHead, type SortDirection } from "@/components/sortable-table-head";
 import { sortByKey } from "@/lib/table-sort";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Plus, Edit, Trash, ChevronLeft, ChevronRight, Home } from "lucide-react";
 import {
   Dialog,
@@ -74,7 +74,6 @@ interface CurrentUser {
 
 export default function ClientsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [clients, setClients] = useState<Client[]>([]);
   const [objects, setObjects] = useState<ObjectData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,18 +120,6 @@ export default function ClientsPage() {
     kafil_address: "",
     kafil_phone_number: "",
   });
-
-  /** Ziyrak: "mijoz qo'sh" -> yangi mijoz dialogini ochish */
-  useEffect(() => {
-    if (searchParams.get("openAdd") === "1") {
-      setOpen(true);
-      if (typeof window !== "undefined") {
-        const u = new URL(window.location.href);
-        u.searchParams.delete("openAdd");
-        window.history.replaceState({}, "", u.pathname + (u.search || ""));
-      }
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     setIsMounted(true);

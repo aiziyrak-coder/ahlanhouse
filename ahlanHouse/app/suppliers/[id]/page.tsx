@@ -50,6 +50,15 @@ const SupplierDetailPage = () => {
     description: "",
   });
 
+  const getAuthHeaders = useCallback(() => {
+    if (!accessToken) {
+      toast({ title: "Xatolik", description: "Avtorizatsiya tokeni topilmadi.", variant: "destructive" });
+      router.push("/login");
+      return null;
+    }
+    return { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` };
+  }, [accessToken, router]);
+
   const sendTelegramNotification = useCallback(async (message: string) => {
     const headers = getAuthHeaders();
     if (!headers || !(headers as Record<string, string>)["Authorization"] || !TELEGRAM_CHAT_ID) return;
@@ -67,15 +76,6 @@ const SupplierDetailPage = () => {
       console.error("Telegram xabarini yuborishda xatolik:", error);
     }
   }, [getAuthHeaders]);
-
-  const getAuthHeaders = useCallback(() => {
-    if (!accessToken) {
-      toast({ title: "Xatolik", description: "Avtorizatsiya tokeni topilmadi.", variant: "destructive" });
-      router.push("/login");
-      return null;
-    }
-    return { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` };
-  }, [accessToken, router]);
 
   const fetchSupplier = useCallback(async () => {
     if (!accessToken) return;

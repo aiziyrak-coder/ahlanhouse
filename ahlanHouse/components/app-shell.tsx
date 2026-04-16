@@ -20,7 +20,6 @@ import { LiveUsdUzs } from "@/components/live-usd-uzs";
 import { LiveWeather } from "@/components/live-weather";
 import { LiveDateTime } from "@/components/live-date-time";
 import { Toaster } from "@/components/ui/toaster";
-import { Ziyrak } from "@/components/ziyrak";
 import { AppFooter } from "@/components/app-footer";
 
 const routes = [
@@ -97,9 +96,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </div>
       </nav>
-
-      {/* Ziyrak — ovozli yordamchi (faqat admin, token bor bo'lsa) */}
-      <Ziyrak />
 
       {/* Hoshiyalar — o‘ng yuqori, silliq animatsiya */}
       <Toaster />

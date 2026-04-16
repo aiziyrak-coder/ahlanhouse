@@ -75,25 +75,10 @@ def main():
         run(ssh, f"cd {BACKEND} && python3 -m venv venv 2>/dev/null; true")
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && pip install -q -r requirements.txt")
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py migrate --noinput")
-        run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py create_sotuv_demo_user", check=False)
+        run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py create_demo_users", check=False)
         run(ssh, f"cd {BACKEND} && source venv/bin/activate && python manage.py collectstatic --noinput --clear 2>/dev/null; true")
 
         print("\n[3] Frontend (Next.js).")
-        # Ziyrak: lokal deploy/server-ziyrak.env bor bo'lsa, serverdagi ahlanHouse/.env ga yozib build da ishlatiladi (GitHubga kirmaydi)
-        ziyrak_env = os.path.join(os.path.dirname(__file__), "server-ziyrak.env")
-        if os.path.isfile(ziyrak_env):
-            with open(ziyrak_env, "r", encoding="utf-8", errors="ignore") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith("#") or "=" not in line:
-                        continue
-                    k, _, v = line.partition("=")
-                    k, v = k.strip(), v.strip().strip("'\"").strip()
-                    if not k or k != "NEXT_PUBLIC_AZURE_SPEECH_KEY" and k != "NEXT_PUBLIC_AZURE_SPEECH_REGION":
-                        continue
-                    v_esc = v.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`")
-                    run(ssh, f"cd {FRONTEND} && (grep -v '^{k}=' .env 2>/dev/null || true; echo '{k}=\"{v_esc}\"') > .env.tmp && mv .env.tmp .env", check=False)
-            print("  Ziyrak Azure kalitlari server .env ga yozildi.")
         run(ssh, f"cd {FRONTEND} && npm install --legacy-peer-deps", check=True)
         run(ssh, f"cd {FRONTEND} && rm -rf .next node_modules/.cache && npm run build")
 

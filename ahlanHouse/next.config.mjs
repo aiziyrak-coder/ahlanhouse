@@ -14,6 +14,8 @@ const nextConfig = {
   async redirects() {
     return [
       { source: "/favicon.ico", destination: "/icon.svg", permanent: false },
+      { source: "/sotuv", destination: "/login", permanent: false },
+      { source: "/sotuv/:path*", destination: "/login", permanent: false },
     ];
   },
   /** Deploy dan keyin brauzer yangi HTML olishi uchun — eski chunk 500 xatosini bartaraf etadi. */
@@ -38,13 +40,6 @@ const nextConfig = {
       "/reports",
       "/settings",
       "/documents",
-      "/sotuv",
-      "/sotuv/login",
-      "/sotuv/mijozlar",
-      "/sotuv/obyektlar",
-      "/sotuv/shartnomalar",
-      "/sotuv/uylar",
-      "/sotuv/virtual-tur",
     ];
     return [
       ...appRoutes.map((source) => ({ source, headers: noCache })),
@@ -52,7 +47,6 @@ const nextConfig = {
       { source: "/suppliers/:path*", headers: noCache },
       { source: "/clients/:path*", headers: noCache },
       { source: "/properties/:path*", headers: noCache },
-      { source: "/sotuv/:path*", headers: noCache },
     ];
   },
 };

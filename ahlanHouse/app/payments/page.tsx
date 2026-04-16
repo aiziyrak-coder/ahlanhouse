@@ -120,28 +120,9 @@ export default function PaymentsPage() {
         setUserType(type);
     }, []);
 
-    /** Ziyrak: object filter, to'lov qo'shish, qoldiq va muddati o'tgan modallar */
     useEffect(() => {
         const objectId = searchParams.get("object");
         if (objectId) setFilters((p) => ({ ...p, object: objectId }));
-        if (searchParams.get("openAdd") === "1") {
-            setIsModalOpen(true);
-            const u = new URL(window.location.href);
-            u.searchParams.delete("openAdd");
-            window.history.replaceState({}, "", u.pathname + (u.search || ""));
-        }
-        if (searchParams.get("openRemaining") === "1") {
-            setIsRemainingModalOpen(true);
-            const u = new URL(window.location.href);
-            u.searchParams.delete("openRemaining");
-            window.history.replaceState({}, "", u.pathname + (u.search || ""));
-        }
-        if (searchParams.get("openOverdue") === "1") {
-            setIsOverdueModalOpen(true);
-            const u = new URL(window.location.href);
-            u.searchParams.delete("openOverdue");
-            window.history.replaceState({}, "", u.pathname + (u.search || ""));
-        }
     }, [searchParams]);
 
     const [overdueDetailsData, setOverdueDetailsData] = useState<{ client: string; apartment: string; object: string; overdue: number; }[]>([]);

@@ -46,5 +46,6 @@ next-env.d.ts
 *.swp
 *.swo
 
-# === Deploy: kalitlar GitHubga kirmasin (faqat serverda ishlatiladi) ===
+# === Deploy (maxfiy kalitlar) ===
 deploy/server-ziyrak.env
+

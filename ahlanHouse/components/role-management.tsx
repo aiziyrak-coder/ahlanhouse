@@ -101,23 +101,6 @@ export function RoleManagement() {
         },
         {
           id: 2,
-          name: "Sotuv bo'limi",
-          description: "Sotuvlar va mijozlar bilan ishlash uchun kirish huquqi",
-          usersCount: 3,
-          permissions: {
-            dashboard: { view: true },
-            properties: { view: true, create: false, edit: false, delete: false },
-            apartments: { view: true, create: false, edit: true, delete: false },
-            clients: { view: true, create: true, edit: true, delete: false },
-            payments: { view: true, create: true, edit: false, delete: false },
-            documents: { view: true, create: true, edit: false, delete: false },
-            reports: { view: false },
-            settings: { view: false },
-            users: { view: false, create: false, edit: false, delete: false },
-          },
-        },
-        {
-          id: 3,
           name: "Buxgalter",
           description: "To'lovlar va hisobotlar bilan ishlash uchun kirish huquqi",
           usersCount: 2,

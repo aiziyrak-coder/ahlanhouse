@@ -43,10 +43,10 @@
 ## 3. Eslatmalar (deploy va keyingi yaxshilashlar)
 
 1. **Login URL:** Hozir `getApiBaseUrl() + '/login/'` ishlatiladi (masalan `https://api.example.com/api/v1/login/`). Agar backend login ni boshqa joyda (masalan `/login/`) xizmat qilsa, `getApiRoot() + '/login/'` ga o‘zgartirish kerak.
-2. **Demo parollar:** Login sahifasidagi demo (Admin/Sotuv/Buxgalter) ma’lumotlari ishlatilayotgan bo‘lsa, production da olib tashlash yoki faqat test muhitida ko‘rsatish tavsiya etiladi.
+2. **Demo parollar:** `create_demo_users` bilan yaratiladigan demo akkauntlar productionda o‘chirilishi yoki faqat test muhitida ishlatilishi tavsiya etiladi.
 3. **Telegram:** `NEXT_PUBLIC_TELEGRAM_BOT_TOKEN` / `TELEGRAM_BOT_TOKEN` o‘rnatilgan sahifalar (apartments, expenses, qarzdorlar, suppliers, reserve, payments) xabar yuboradi; token bo‘lmasa so‘rovlar xato bermasligi uchun try/catch da tutilgan.
 4. **Lint:** `next lint` loyiha katalogida ishlatilganda “Invalid project directory” xabari chiqishi mumkin; `package.json` dagi `lint` skripti va `next.config` tekshirilsin.
-5. **User-nav:** "Profil" va "Bildirishnomalar" tugmalari `/settings/profile` va `/settings/notifications` ga yo‘naltiradi; hozircha faqat `/settings` mavjud. Kerak bo‘lsa bu linklar `/settings` ga o‘zgartiriladi yoki yangi route lar qo‘shiladi.
+5. **User-nav:** Profil, sozlamalar va bildirishnomalar `/settings` ga yo‘naltiriladi.
 
 ---
 

@@ -38,6 +38,7 @@ pip install -r requirements.txt
 cp .env.example .env
 # .env ni tahrirlang: DJANGO_SECRET_KEY, DJANGO_DEBUG=False, DJANGO_ALLOWED_HOSTS=...
 python manage.py migrate
+# (ixtiyoriy) demo akkauntlar: python manage.py create_demo_users
 python manage.py runserver 0.0.0.0:8000
 ```
 

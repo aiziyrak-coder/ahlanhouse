@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortableTableHead, type SortDirection } from "@/components/sortable-table-head";
 import { sortByKey } from "@/lib/table-sort";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Plus, Eye, Edit, Trash, CreditCard, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -86,7 +86,6 @@ interface CurrentUser {
 
 const SuppliersPage = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -137,6 +136,14 @@ const SuppliersPage = () => {
   const EXPENSE_TYPES_API_URL = `${API_BASE_URL}/expense-types/`;
   const OBJECTS_API_URL = `${API_BASE_URL}/objects/`; // --- YANGI: Obyektlar API manzili ---
 
+  const getAuthHeaders = useCallback(() => {
+    if (!accessToken) {
+      if (typeof window !== "undefined" && !localStorage.getItem("access_token")) router.push("/login");
+      return {};
+    }
+    return { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` };
+  }, [accessToken, router]);
+
   const sendTelegramNotification = useCallback(async (message: string) => {
     const headers = getAuthHeaders();
     if (!headers || !(headers as Record<string, string>)["Authorization"] || !TELEGRAM_CHAT_ID) return;
@@ -174,20 +181,6 @@ const SuppliersPage = () => {
     }
   }, [router]);
 
-  /** Ziyrak: "yetkazib beruvchi qo'sh" -> yangi yetkazib beruvchi dialogini ochish */
-  useEffect(() => {
-    if (searchParams.get("openAdd") === "1") {
-      setEditId(null);
-      setFormData({ company_name: "", contact_person_name: "", phone_number: "", address: "", description: "", balance: "0.00" });
-      setOpen(true);
-      if (typeof window !== "undefined") {
-        const u = new URL(window.location.href);
-        u.searchParams.delete("openAdd");
-        window.history.replaceState({}, "", u.pathname + (u.search || ""));
-      }
-    }
-  }, [searchParams]);
-
   const canPerformSensitiveActions = useCallback((user: CurrentUser | null): boolean => {
     if (!user) return false;
     const isRestrictedRole = user.user_type === 'sotuvchi' || user.user_type === 'buxgalter';
@@ -195,14 +188,6 @@ const SuppliersPage = () => {
     if (isRestrictedRole || hasSardorInFio) return false;
     return true;
   }, []);
-
-  const getAuthHeaders = useCallback(() => {
-    if (!accessToken) {
-      if (typeof window !== "undefined" && !localStorage.getItem("access_token")) router.push("/login");
-      return {};
-    }
-    return { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` };
-  }, [accessToken, router]);
 
   const fetchSuppliers = useCallback(async () => {
     if (!accessToken) {

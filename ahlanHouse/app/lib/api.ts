@@ -15,19 +15,16 @@ export const getApiRoot = (): string => {
   return base.replace(/\/api\/v1\/?$/, "") || base;
 };
 
-/** 401: tokenni tozalash va login sahifasiga yo‘naltirish (admin yoki sotuv). */
-export function clearAuthAndRedirect(
-  router: { push: (path: string) => void },
-  isSotuv = false
-): void {
+/** 401: tokenni tozalash va login sahifasiga yo‘naltirish. */
+export function clearAuthAndRedirect(router: { push: (path: string) => void }): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
   localStorage.removeItem("user_type");
   localStorage.removeItem("user_fio");
   localStorage.removeItem("userId");
-  if (isSotuv) localStorage.removeItem("sales_module");
-  router.push(isSotuv ? "/sotuv/login" : "/login");
+  localStorage.removeItem("sales_module");
+  router.push("/login");
 }
 
 /** Type-safe xato xabari (catch (error: unknown) uchun). */

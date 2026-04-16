@@ -236,16 +236,8 @@ export default function ExpensesPage() {
         }
     }, [router]);
 
-    /** Ziyrak: openAdd=1 -> add dialog; object=id -> set object filter */
     useEffect(() => {
-        const openAdd = searchParams.get("openAdd") === "1";
         const objectId = searchParams.get("object");
-        if (openAdd) {
-            setOpen(true);
-            const u = new URL(window.location.href);
-            u.searchParams.delete("openAdd");
-            window.history.replaceState({}, "", u.pathname + (u.search || ""));
-        }
         if (objectId) setFilters((prev) => ({ ...prev, object: objectId }));
     }, [searchParams]);
 

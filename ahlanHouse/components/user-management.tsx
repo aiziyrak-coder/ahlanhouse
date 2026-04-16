@@ -42,8 +42,7 @@ export function UserManagement() {
       // Generate mock roles data
       const mockRoles = [
         { id: 1, name: "Administrator" },
-        { id: 2, name: "Sotuv bo'limi" },
-        { id: 3, name: "Buxgalter" },
+        { id: 2, name: "Buxgalter" },
       ]
 
       // Generate mock users data
@@ -59,19 +58,10 @@ export function UserManagement() {
         },
         {
           id: 2,
-          name: "Sales User",
-          email: "sales@ahlanhouse.uz",
-          phone: "+998 91 234 56 78",
-          roleId: 2,
-          roleName: "Sotuv bo'limi",
-          lastLogin: new Date().toISOString(),
-        },
-        {
-          id: 3,
           name: "Accountant User",
           email: "accountant@ahlanhouse.uz",
           phone: "+998 93 345 67 89",
-          roleId: 3,
+          roleId: 2,
           roleName: "Buxgalter",
           lastLogin: new Date().toISOString(),
         },
