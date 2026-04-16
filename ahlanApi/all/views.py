@@ -561,7 +561,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
     def statistics(self, request):
         today = timezone.now().date()
         total_sales = Payment.objects.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
-        sold_apartments = Apartment.objects.filter(status='sotilgan').count()
+        # Frontend avvalgi mantiq: "sotilgan" va "paid" ikkalasi ham sotilgan deb hisoblanadi
+        sold_apartments = Apartment.objects.filter(status__in=['sotilgan', 'paid']).count()
         clients = User.objects.filter(user_type='mijoz').count()
         total_objects = Object.objects.count()
         total_apartments = Apartment.objects.count()

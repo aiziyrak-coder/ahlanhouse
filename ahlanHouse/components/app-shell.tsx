@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -16,9 +17,22 @@ import {
 } from "lucide-react";
 import { Search } from "@/components/search";
 import { UserNav } from "@/components/user-nav";
-import { LiveUsdUzs } from "@/components/live-usd-uzs";
-import { LiveWeather } from "@/components/live-weather";
 import { LiveDateTime } from "@/components/live-date-time";
+
+const LiveUsdUzs = dynamic(
+  () => import("@/components/live-usd-uzs").then((m) => ({ default: m.LiveUsdUzs })),
+  {
+    ssr: false,
+    loading: () => <span className="hidden h-8 w-[4.5rem] shrink-0 rounded-lg bg-white/10 sm:inline-block" aria-hidden />,
+  }
+);
+const LiveWeather = dynamic(
+  () => import("@/components/live-weather").then((m) => ({ default: m.LiveWeather })),
+  {
+    ssr: false,
+    loading: () => <span className="hidden h-8 w-[4.5rem] shrink-0 rounded-lg bg-white/10 sm:inline-block" aria-hidden />,
+  }
+);
 import { Toaster } from "@/components/ui/toaster";
 import { AppFooter } from "@/components/app-footer";
 

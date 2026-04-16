@@ -90,113 +90,80 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!accessToken) return;
 
-    const fetchStats = async () => {
+    let cancelled = false;
+
+    const loadDashboard = async () => {
       setLoading(true);
       try {
         const apiBase = getApiBaseUrl();
-        let url = `${apiBase}/payments/statistics/`;
+        const headers = getAuthHeaders();
+
+        let statsUrl = `${apiBase}/payments/statistics/`;
+        let recentUrl = `${apiBase}/payments/?page_size=5`;
         if (dateRange.from && dateRange.to) {
-          url += `?created_at__gte=${dateRange.from.toISOString().split("T")[0]}&created_at__lte=${dateRange.to.toISOString().split("T")[0]}`;
+          const gte = dateRange.from.toISOString().split("T")[0];
+          const lte = dateRange.to.toISOString().split("T")[0];
+          statsUrl += `?created_at__gte=${gte}&created_at__lte=${lte}`;
+          recentUrl += `&created_at__gte=${gte}&created_at__lte=${lte}`;
         }
 
-        const statsResponse = await fetch(url, { method: "GET", headers: getAuthHeaders() });
-        if (!statsResponse.ok) {
-          if (statsResponse.status === 401) {
-            setLoading(false);
-            clearAuthAndRedirect(router);
-            return;
-          }
-          throw new Error("Statistikani olishda xatolik");
+        const [statsResponse, suppliersResponse, recentResponse] = await Promise.all([
+          fetch(statsUrl, { method: "GET", headers }),
+          fetch(`${apiBase}/suppliers/?page_size=1`, { method: "GET", headers }),
+          fetch(recentUrl, { method: "GET", headers }),
+        ]);
+
+        if (statsResponse.status === 401 || suppliersResponse.status === 401 || recentResponse.status === 401) {
+          setLoading(false);
+          clearAuthAndRedirect(router);
+          return;
         }
 
-        const statsData = await statsResponse.json();
+        if (!statsResponse.ok) throw new Error("Statistikani olishda xatolik");
+        if (!suppliersResponse.ok) throw new Error("Yetkazib beruvchilarni olishda xatolik");
+        if (!recentResponse.ok) throw new Error("So'nggi to'lovlarni olishda xatolik");
 
-        const soldApartmentsUrl = `${apiBase}/apartments/?status__in=paid,sotilgan&page_size=1000`;
-        const soldApartmentsResponse = await fetch(
-          soldApartmentsUrl,
-          { method: "GET", headers: getAuthHeaders() }
-        );
-        if (!soldApartmentsResponse.ok) {
-          if (soldApartmentsResponse.status === 401) {
-            setLoading(false);
-            clearAuthAndRedirect(router);
-            return;
-          }
-          throw new Error("Sotilgan xonadonlarni olishda xatolik");
-        }
-        const soldApartmentsData = await soldApartmentsResponse.json();
+        const [statsData, suppliersData, recentData] = await Promise.all([
+          statsResponse.json(),
+          suppliersResponse.json(),
+          recentResponse.json(),
+        ]);
 
-        const actualSoldCount = (soldApartmentsData.results || []).filter(
-          (apt: { status: string }) => apt.status === 'paid' || apt.status === 'sotilgan'
-        ).length;
-
-        const suppliersResponse = await fetch(`${apiBase}/suppliers/`, {
-          method: "GET", headers: getAuthHeaders(),
-        });
-        if (!suppliersResponse.ok) {
-          if (suppliersResponse.status === 401) {
-            setLoading(false);
-            clearAuthAndRedirect(router);
-            return;
-          }
-          throw new Error("Yetkazib beruvchilarni olishda xatolik");
-        }
-        const suppliersData = await suppliersResponse.json();
-        const totalSuppliers = suppliersData.count || 0;
+        if (cancelled) return;
 
         setStats({
           totalProperties: statsData.total_objects || 0,
           totalApartments: statsData.total_apartments || 0,
-          soldApartments: actualSoldCount,
+          soldApartments: statsData.sold_apartments ?? 0,
           reservedApartments: statsData.reserved_apartments || 0,
           availableApartments: statsData.free_apartments || 0,
           totalClients: statsData.clients || 0,
           totalSales: statsData.total_sales || 0,
           totalPayments: statsData.total_payments || 0,
           pendingPayments: statsData.pending_payments || 0,
-          totalSuppliers: totalSuppliers,
+          totalSuppliers: suppliersData.count || 0,
           averagePrice: statsData.average_price || 0,
           paymentsDueToday: statsData.payments_due_today || 0,
           paymentsPaidToday: statsData.payments_paid_today || 0,
         });
+        setRecentPayments(recentData.results || []);
       } catch (error: unknown) {
-        toast({ title: "Xatolik", description: getErrorMessage(error, "Statistikani yuklashda xatolik"), variant: "destructive" });
+        if (!cancelled) {
+          toast({
+            title: "Xatolik",
+            description: getErrorMessage(error, "Statistikani yuklashda xatolik"),
+            variant: "destructive",
+          });
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchStats();
-  }, [accessToken, router, dateRange, getAuthHeaders]);
-
-  useEffect(() => {
-    if (!accessToken) return;
-
-    const fetchRecentPayments = async () => {
-      try {
-        let url = `${getApiBaseUrl()}/payments/?page_size=5`;
-        if (dateRange.from && dateRange.to) {
-          url += `&created_at__gte=${dateRange.from.toISOString().split("T")[0]}&created_at__lte=${dateRange.to.toISOString().split("T")[0]}`;
-        }
-
-        const response = await fetch(url, { method: "GET", headers: getAuthHeaders() });
-        if (!response.ok) {
-          if (response.status === 401) {
-            clearAuthAndRedirect(router);
-            return;
-          }
-          throw new Error("To'lovlarni olishda xatolik");
-        }
-
-        const data = await response.json();
-        setRecentPayments(data.results || []);
-      } catch (error: unknown) {
-        toast({ title: "Xatolik", description: getErrorMessage(error, "To'lovlarni olishda xatolik"), variant: "destructive" });
-        setRecentPayments([]);
-      }
+    void loadDashboard();
+    return () => {
+      cancelled = true;
     };
-
-    fetchRecentPayments();
   }, [accessToken, router, dateRange, getAuthHeaders]);
 
   const fetchModalPayments = useCallback(

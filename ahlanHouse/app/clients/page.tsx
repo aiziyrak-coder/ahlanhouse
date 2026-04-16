@@ -174,7 +174,7 @@ export default function ClientsPage() {
     if (!accessToken) return;
     setObjectsLoading(true);
     let allObjects: ObjectData[] = [];
-    let nextUrl: string | null = `${getApiBaseUrl()}/objects/?limit=100`; // limitni oshirish mumkin
+    let nextUrl: string | null = `${getApiBaseUrl()}/objects/?page_size=500`;
 
     try {
       while (nextUrl) {
@@ -200,7 +200,7 @@ export default function ClientsPage() {
     if (!accessToken) return [];
     setApartmentsLoading(true);
     let allPayments: any[] = [];
-    let nextUrl: string | null = `${getApiBaseUrl()}/payments/?user=${clientId}&limit=100`;
+    let nextUrl: string | null = `${getApiBaseUrl()}/payments/?user=${clientId}&page_size=200`;
 
     try {
       while (nextUrl) {
@@ -211,7 +211,7 @@ export default function ClientsPage() {
         }
         const data = await response.json();
         allPayments = [...allPayments, ...(data.results || [])];
-        nextUrl = data.next;
+        nextUrl = (data.next as string | null) || null;
       }
       if (allPayments.length === 0) return [];
 
@@ -244,46 +244,91 @@ export default function ClientsPage() {
     }
   }, [accessToken, getAuthHeaders, isMounted]);
 
-  const fetchClients = useCallback(async () => { // useCallback qo'shildi
+  const fetchClients = useCallback(async () => {
     if (!accessToken) {
       if (isMounted) router.push("/login");
       return;
     }
     setLoading(true);
-    let allFormattedClients: Client[] = [];
-    let nextUrl: string | null = `${getApiBaseUrl()}/users/?user_type=mijoz&limit=100`;
-    try {
+    const apiBase = getApiBaseUrl();
+    const headers = getAuthHeaders();
+
+    const collectPages = async <T,>(firstUrl: string): Promise<T[]> => {
+      const out: T[] = [];
+      let nextUrl: string | null = firstUrl;
       while (nextUrl) {
-        const response = await fetch(nextUrl, { method: "GET", headers: getAuthHeaders() });
+        const response = await fetch(nextUrl, { method: "GET", headers });
         if (!response.ok) {
           if (response.status === 401 && isMounted) {
             localStorage.removeItem("access_token");
-            setCurrentUser(null); // Foydalanuvchini tozalash
+            setCurrentUser(null);
             router.push("/login");
           }
-          throw new Error(`Mijozlarni olishda xatolik: ${response.statusText}`);
+          throw new Error(`Ma'lumot olishda xatolik: ${response.statusText}`);
         }
         const data = await response.json();
-        const clientsList = data.results || [];
-
-        const formattedClientsBatchPromises = clientsList.map(async (client: any): Promise<Client> => {
-          const clientApartments = await fetchClientApartments(client.id);
-          return {
-            id: client.id,
-            name: client.fio || "Noma'lum",
-            phone: client.phone_number || "Noma'lum",
-            address: client.address || null,
-            balance: Number(client.balance) || 0,
-            apartments: clientApartments,
-            kafil_fio: client.kafil_fio || null,
-            kafil_address: client.kafil_address || null,
-            kafil_phone_number: client.kafil_phone_number || null,
-          };
-        });
-        const formattedClientsBatch = await Promise.all(formattedClientsBatchPromises);
-        allFormattedClients = [...allFormattedClients, ...formattedClientsBatch];
-        nextUrl = data.next;
+        out.push(...(data.results || []));
+        nextUrl = (data.next as string | null) || null;
       }
+      return out;
+    };
+
+    try {
+      const rawUsers = await collectPages<{ id: number; fio?: string; phone_number?: string; address?: string | null; balance?: string | number; kafil_fio?: string | null; kafil_address?: string | null; kafil_phone_number?: string | null }>(
+        `${apiBase}/users/?user_type=mijoz&page_size=500`
+      );
+
+      const mijozIds = new Set(rawUsers.map((u) => u.id));
+
+      const [allPayments, allApartments] = await Promise.all([
+        collectPages<{ user: number; apartment: number | null; apartment_info?: string }>(`${apiBase}/payments/?page_size=2000`),
+        collectPages<{ id: number; room_number?: string; object_name?: string; object?: number; rooms?: number | string }>(`${apiBase}/apartments/?page_size=5000`),
+      ]);
+
+      const aptById = new Map(allApartments.map((a) => [a.id, a]));
+
+      const paymentsByUser = new Map<number, { user: number; apartment: number | null; apartment_info?: string }[]>();
+      for (const p of allPayments) {
+        if (p.user == null || !mijozIds.has(p.user)) continue;
+        const list = paymentsByUser.get(p.user) ?? [];
+        list.push(p);
+        paymentsByUser.set(p.user, list);
+      }
+
+      const buildApartments = (userId: number): Apartment[] => {
+        const plist = paymentsByUser.get(userId) ?? [];
+        const seen = new Set<number>();
+        const out: Apartment[] = [];
+        for (const p of plist) {
+          if (p.apartment == null || seen.has(p.apartment)) continue;
+          const apt = aptById.get(p.apartment);
+          if (!apt) continue;
+          seen.add(p.apartment);
+          const roomsMatch = (p.apartment_info || "").match(/(\d+)\s*xonali/);
+          const roomsFromField = apt.rooms != null && apt.rooms !== "" ? String(apt.rooms) : null;
+          out.push({
+            id: p.apartment,
+            room_number: apt.room_number || "N/A",
+            object_name: apt.object_name || "Noma'lum obyekt",
+            object_id: apt.object || 0,
+            rooms: roomsFromField || (roomsMatch ? roomsMatch[1] : "Noma'lum"),
+          });
+        }
+        return out;
+      };
+
+      const allFormattedClients: Client[] = rawUsers.map((client) => ({
+        id: client.id,
+        name: client.fio || "Noma'lum",
+        phone: client.phone_number || "Noma'lum",
+        address: client.address || null,
+        balance: Number(client.balance) || 0,
+        apartments: buildApartments(client.id),
+        kafil_fio: client.kafil_fio || null,
+        kafil_address: client.kafil_address || null,
+        kafil_phone_number: client.kafil_phone_number || null,
+      }));
+
       setClients(allFormattedClients);
     } catch (error: any) {
       if (isMounted) toast({ title: "Xatolik", description: error.message || "Mijozlarni olishda xatolik", variant: "destructive" });
@@ -291,7 +336,7 @@ export default function ClientsPage() {
     } finally {
       setLoading(false);
     }
-  }, [accessToken, getAuthHeaders, isMounted, router, fetchClientApartments]);
+  }, [accessToken, getAuthHeaders, isMounted, router]);
 
   useEffect(() => {
     if (!isMounted || accessToken === null) return;
@@ -457,11 +502,14 @@ export default function ClientsPage() {
 
   const openApartmentsDialog = async (client: Client) => {
     setSelectedClient(client);
-    setSelectedClientApartments([]); // Eski ma'lumotlarni tozalash
     setApartmentsOpen(true);
-    // fetchClientApartments allaqachon apartmentsLoading'ni boshqaradi
+    if (client.apartments && client.apartments.length > 0) {
+      setSelectedClientApartments(client.apartments);
+      return;
+    }
+    setSelectedClientApartments([]);
     const apartments = await fetchClientApartments(client.id);
-    setSelectedClientApartments(apartments); // Yangi ma'lumotlarni o'rnatish
+    setSelectedClientApartments(apartments);
   };
 
   const filteredClients = clients.filter((client) => {
