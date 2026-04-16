@@ -16,11 +16,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   async redirects() {
-    return [
-      { source: "/favicon.ico", destination: "/icon.svg", permanent: false },
-      { source: "/sotuv", destination: "/login", permanent: false },
-      { source: "/sotuv/:path*", destination: "/login", permanent: false },
-    ];
+    return [{ source: "/favicon.ico", destination: "/icon.svg", permanent: false }];
   },
   /** Deploy dan keyin brauzer yangi HTML olishi uchun — eski chunk 500 xatosini bartaraf etadi. */
   async headers() {
@@ -32,6 +28,8 @@ const nextConfig = {
     const appRoutes = [
       "/",
       "/login",
+      "/sotuv",
+      "/sotuv/login",
       "/apartments",
       "/apartments/add",
       "/expenses",
@@ -51,6 +49,7 @@ const nextConfig = {
       { source: "/suppliers/:path*", headers: noCache },
       { source: "/clients/:path*", headers: noCache },
       { source: "/properties/:path*", headers: noCache },
+      { source: "/sotuv/:path*", headers: noCache },
     ];
   },
 };

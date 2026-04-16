@@ -3,6 +3,7 @@
 import type React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -138,6 +139,13 @@ export default function LoginPage() {
           priority
         />
       </div>
+      <Link
+        href="/sotuv/login"
+        className="w-full max-w-md rounded-2xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors flex items-center justify-center gap-3 py-4 px-6 text-primary font-semibold shadow-lg"
+      >
+        <span className="text-lg">🏢</span>
+        Sotuv bo&apos;limi
+      </Link>
       <Card className="w-full max-w-md rounded-2xl">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-semibold text-foreground">Tizimga kirish</CardTitle>
