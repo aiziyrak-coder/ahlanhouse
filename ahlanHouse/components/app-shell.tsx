@@ -82,6 +82,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={route.href}
                 href={route.href}
+                prefetch
                 className={cn(
                   "dock-icon flex flex-col items-center justify-center rounded-xl p-2 sm:p-2.5 text-center transition-all duration-200 ease-out min-w-[2.5rem] sm:min-w-[2.75rem] shrink-0",
                   active

@@ -20,9 +20,10 @@ export const viewport: Viewport = {
 };
 
 /** Inline script: chunk 404/ChunkLoadError — HTML yuklanganida darhol ishlaydi, React/chunk dan oldin. */
+/** Faqat haqiqiy chunk/deploy nosozligi — umumiy 404/API xatolari sahifani qayta yuklamasin. */
 const CHUNK_RELOAD_SCRIPT = `
 (function(){
-  var key='chunk_reload_at', cooldown=8000;
+  var key='chunk_reload_at', cooldown=12000;
   function reload(){
     var now=Date.now(), last=parseInt(sessionStorage.getItem(key)||'0',10);
     if(now-last<cooldown) return;
@@ -30,13 +31,21 @@ const CHUNK_RELOAD_SCRIPT = `
     var u=location.pathname+(location.search ? location.search+'&' : '?')+'_cb='+now+location.hash;
     location.replace(u);
   }
-  function check(msg){
-    if(!msg||typeof msg!=='string') return;
-    if(/ChunkLoadError|Loading chunk|419|Suspense boundary|_next\\\\/static\\\\//.test(msg)) reload();
-    if(/Failed to load resource|404|ERR_ABORTED|chunk.*failed/.test(msg)) reload();
+  function isChunkFailure(msg){
+    if(!msg||typeof msg!=='string') return false;
+    if(/ChunkLoadError|Loading chunk|Loading CSS chunk|Failed to fetch dynamically imported module|Importing a module script failed|Cannot find module.*chunk/i.test(msg)) return true;
+    if(msg.indexOf('_next/static')!==-1 && /(chunk|load|import|script|css)/i.test(msg)) return true;
+    return false;
   }
-  window.addEventListener('error',function(e){ check(e.message); if(e.filename&&e.filename.indexOf('_next/static')!==-1) reload(); });
-  window.addEventListener('unhandledrejection',function(e){ check((e.reason&&e.reason.message)||String(e.reason)); });
+  window.addEventListener('error',function(e){
+    var fn=e&&e.filename||'';
+    if(fn.indexOf('_next/static')!==-1) reload();
+    else if(isChunkFailure(e&&e.message||'')) reload();
+  });
+  window.addEventListener('unhandledrejection',function(e){
+    var m=(e.reason&&e.reason.message)||String(e.reason||'');
+    if(isChunkFailure(m)) reload();
+  });
 })();
 `.replace(/<\/script>/gi, "<\\/script>");
 

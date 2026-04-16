@@ -5,6 +5,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    /** lucide: faqat ishlatilgan ikonlar tree-shake — client bundle kichrayadi */
+    optimizePackageImports: ["lucide-react"],
+  },
   turbopack: {
     root: __dirname,
   },
