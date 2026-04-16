@@ -173,3 +173,20 @@ tail -40 /var/www/gunicorn-error.log
 ```
 
 Agar **`.next/BUILD_ID` yo‘q** bo‘lsa, frontend build qiling: `cd /var/www/ahlanhouse/ahlanHouse && npm run build && pm2 restart ahlan-house`.
+
+### Nginx: `conflicting server name "ahlan.uz" ... ignored`
+
+` sites-enabled` da **ahlan.uz** uchun **ikki marta** konfig bo‘lsa, Nginx birini e’tiborsiz qiladi — noto‘g‘ri blok tanlanishi mumkin.
+
+```bash
+ls -la /etc/nginx/sites-enabled/
+# faqat bitta `ahlan` (yoki `ahlan.uz`) qoldiring; dublikatni olib tashlang:
+# sudo rm /etc/nginx/sites-enabled/DUBLIKAT_FAYL
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### PM2: `Cannot remove headers after they are sent` (server.js:187+)
+
+Bu xabar **oldingi** `server.js` (loader + `bufferAndInjectStripScript`) versiyasidan qolgan log bo‘lishi mumkin. Yangi `server.js` qisqa (~70 qator), bunday patch yo‘q.
+
+Yangi loglarni ko‘rish: `pm2 flush` keyin `pm2 restart ahlan-house`, so‘ng `pm2 logs ahlan-house --lines 30`.

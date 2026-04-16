@@ -53,13 +53,16 @@ app.prepare().then(() => {
           return;
         }
         handle(req, res, parsedUrl);
-      } catch (_) {
+      } catch (err) {
         try {
           if (!res.headersSent) {
-            res.writeHead(500);
+            res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
             res.end("Internal Server Error");
+          } else if (!res.writableEnded) {
+            res.destroy();
           }
         } catch (__) {}
+        console.error("[server.js]", err && err.message ? err.message : err);
       }
     })
     .listen(port, () => {
