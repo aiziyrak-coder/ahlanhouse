@@ -18,7 +18,10 @@ let BUILD_ID = "";
 try {
   BUILD_ID = fs.readFileSync(path.join(__dirname, ".next", "BUILD_ID"), "utf8").trim();
 } catch (_) {
-  BUILD_ID = String(Date.now());
+  BUILD_ID = "";
+}
+if (!BUILD_ID) {
+  console.warn("[server.js] .next/BUILD_ID topilmadi — document loader o‘chiriladi, oddiy Next ishlaydi.");
 }
 
 const MIMES = {
@@ -97,10 +100,25 @@ const INJECT_STRIP_SCRIPT =
   "if(p.indexOf('/_/')===0){var r=p.replace(/^\\/_\\/[^/]+/,'')||'/';history.replaceState(null,'',r+location.search+location.hash);}" +
   "})();</script>";
 
+/** Eski /_/noto'g'riBuild/... yo'lini haqiqiy app pathiga aylantiradi (ikki marta /_/ qo'shilmasin). */
+function normalizeDocumentPath(pathname) {
+  const p = pathname || "/";
+  const m = p.match(/^\/_\/[^/]+(\/.*)?$/);
+  if (m) return m[1] && m[1].length ? m[1] : "/";
+  return p;
+}
+
 /** Build ID yo'l orqali (query emas) — URL da ?ver= bo'lmasin. */
 function sendLoaderHtml(res, pathname, query, buildId) {
   const safeId = String(buildId).replace(/[<>"'\s/]/g, "");
-  const targetPath = "/_/" + safeId + (pathname === "/" ? "" : pathname);
+  if (!safeId) {
+    res.writeHead(302, { Location: normalizeDocumentPath(pathname) || "/" });
+    res.end();
+    return;
+  }
+  const appPath = normalizeDocumentPath(pathname);
+  const suffix = appPath === "/" ? "" : appPath;
+  const targetPath = "/_/" + safeId + suffix;
   const html = [
     "<!DOCTYPE html><html><head>",
     '<meta http-equiv="Cache-Control" content="no-store,no-cache,must-revalidate">',
@@ -176,6 +194,10 @@ app.prepare().then(() => {
             redirectStripVer(res, pathname, query, parsedUrl.hash || "");
             return;
           }
+          if (!BUILD_ID) {
+            handle(req, res, parsedUrl);
+            return;
+          }
           const pathBuildMatch = pathname.match(/^\/_\/([^/]+)(\/.*)?$/);
           if (pathBuildMatch) {
             const pathBuildId = pathBuildMatch[1];
@@ -185,9 +207,14 @@ app.prepare().then(() => {
               bufferAndInjectStripScript(req, res, rewrite);
               return;
             }
+            /* Eski build ID — cheksiz loader o'rniga yangi build URL ga bir marta yo'naltirish */
+            sendLoaderHtml(res, normalizeDocumentPath(pathname), query, BUILD_ID);
+            return;
           }
-          sendLoaderHtml(res, pathname, query, BUILD_ID);
-          return;
+          if (BUILD_ID) {
+            sendLoaderHtml(res, pathname, query, BUILD_ID);
+            return;
+          }
         }
 
         handle(req, res, parsedUrl);
