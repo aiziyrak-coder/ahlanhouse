@@ -24,6 +24,33 @@ if (!BUILD_ID) {
   console.warn("[server.js] .next/BUILD_ID topilmadi — document loader o‘chiriladi, oddiy Next ishlaydi.");
 }
 
+/** Brauzerda /_/ olib tashlanganda qolgan `ahlan.uz/BUILD_ID` kabi URL — ilova yo'li emas. */
+const KNOWN_SINGLE_SEGMENT = new Set([
+  "login",
+  "apartments",
+  "clients",
+  "documents",
+  "expenses",
+  "payments",
+  "properties",
+  "qarzdorlar",
+  "reports",
+  "settings",
+  "suppliers",
+  "icon.svg",
+  "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
+]);
+
+function looksLikeStaleBuildSegment(seg) {
+  if (!seg || typeof seg !== "string") return false;
+  if (KNOWN_SINGLE_SEGMENT.has(seg.toLowerCase())) return false;
+  if (BUILD_ID && seg === BUILD_ID) return true;
+  // Next BUILD_ID odatda uzun, faqat URL-xavfsiz belgilar
+  return seg.length >= 16 && /^[a-zA-Z0-9_-]+$/.test(seg);
+}
+
 const MIMES = {
   ".js": "application/javascript",
   ".css": "text/css",
@@ -119,10 +146,12 @@ function sendLoaderHtml(res, pathname, query, buildId) {
   const appPath = normalizeDocumentPath(pathname);
   const suffix = appPath === "/" ? "" : appPath;
   const targetPath = "/_/" + safeId + suffix;
+  const refreshUrl = encodeURI(targetPath);
   const html = [
     "<!DOCTYPE html><html><head>",
     '<meta http-equiv="Cache-Control" content="no-store,no-cache,must-revalidate">',
     '<meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">',
+    '<meta http-equiv="refresh" content="0;url=' + refreshUrl + '">',
     "<title>Yuklanmoqda...</title></head><body>",
     "<p>Yuklanmoqda...</p>",
     "<script>",
@@ -196,6 +225,12 @@ app.prepare().then(() => {
           }
           if (!BUILD_ID) {
             handle(req, res, parsedUrl);
+            return;
+          }
+          const oneSeg = pathname.match(/^\/([^/]+)$/);
+          if (oneSeg && looksLikeStaleBuildSegment(oneSeg[1])) {
+            res.writeHead(302, { Location: "/" });
+            res.end();
             return;
           }
           const pathBuildMatch = pathname.match(/^\/_\/([^/]+)(\/.*)?$/);
