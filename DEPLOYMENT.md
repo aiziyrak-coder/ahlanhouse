@@ -147,3 +147,29 @@ Django loyihasi `db.sqlite3` faylini **backend papkasi** ichida kutadi.
 | Backend log         | `tail -f /var/www/gunicorn-error.log` |
 | Backend qayta ishga tushirish | `cd /var/www/ahlanhouse/ahlanApi && source venv/bin/activate && pkill -f gunicorn; gunicorn ahlanApi.wsgi:application --bind 0.0.0.0:8000 --workers 2 --daemon` |
 | Frontend qayta ishga tushirish | `pm2 restart ahlan-house` |
+
+---
+
+## 5. 502 Bad Gateway (ahlan.uz va api.ahlan.uz)
+
+Nginx orqaga ulana olmaganda chiqadi: **127.0.0.1:3000** (Next.js / PM2) yoki **127.0.0.1:8000** (Gunicorn) ishlamayapti yoki build xato.
+
+**Tezkor tiklash (serverda, loyiha ildizidan):**
+
+```bash
+cd /var/www/ahlanhouse
+sudo bash deploy/fix-502-upstreams.sh
+```
+
+**Qo‘lda tekshiruv:**
+
+```bash
+ss -tlnp | grep -E '3000|8000'
+curl -sI http://127.0.0.1:3000/login | head -1
+curl -sI http://127.0.0.1:8000/ | head -1
+sudo tail -30 /var/log/nginx/error.log
+pm2 logs ahlan-house --lines 40
+tail -40 /var/www/gunicorn-error.log
+```
+
+Agar **`.next/BUILD_ID` yo‘q** bo‘lsa, frontend build qiling: `cd /var/www/ahlanhouse/ahlanHouse && npm run build && pm2 restart ahlan-house`.
