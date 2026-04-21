@@ -190,3 +190,26 @@ sudo nginx -t && sudo systemctl reload nginx
 Bu xabar **oldingi** `server.js` (loader + `bufferAndInjectStripScript`) versiyasidan qolgan log bo‘lishi mumkin. Yangi `server.js` qisqa (~70 qator), bunday patch yo‘q.
 
 Yangi loglarni ko‘rish: `pm2 flush` keyin `pm2 restart ahlan-house`, so‘ng `pm2 logs ahlan-house --lines 30`.
+
+---
+
+## 6. Telegram bot (bildirishnomalar “kelmayapti”)
+
+Loyihada **alohida bot dasturi (PM2) yo‘q**: xabarlar **har safar** Django orqali `https://api.telegram.org/bot.../sendMessage` ga yuboriladi. Shuning uchun:
+
+1. **Serverda** `TELEGRAM_BOT_TOKEN` **Gunicorn muhitida** bo‘lishi kerak (`ahlanApi/.env` yoki `systemd` `Environment=`).
+2. Frontend `NEXT_PUBLIC_TELEGRAM_CHAT_ID` (yoki kodda sukut) — **guruh yoki shaxsiy chat id**; bot ushbu chatga **xabar yubora oladigan** bo‘lishi kerak (guruhda bot **admin** yoki kamida a’zo).
+3. Token yo‘q bo‘lsa API **`503`** qaytaradi: `Telegram bot token sozlanmagan.`
+4. Telegram `{"ok": false}` qaytarsa endi API **`502`** bilan `detail` qaytaradi — brauzerda xato aniq ko‘rinadi.
+
+**Tekshiruv (serverda):**
+
+```bash
+cd /var/www/ahlanhouse/ahlanApi
+source venv/bin/activate
+# .env da TELEGRAM_BOT_TOKEN bo'lsa, yoki:
+# export TELEGRAM_BOT_TOKEN='123456:ABC-...'
+python manage.py telegram_test -1003733316489
+```
+
+`OK: xabar Telegramga yetib bordi.` chiqsa — token va chat_id to‘g‘ri. Xato matni (masalan *bot was kicked*, *chat not found*) bo‘yicha Telegram sozlamalarini tuzating, keyin **Gunicornni qayta ishga tushiring** (token yangilangandan keyin).

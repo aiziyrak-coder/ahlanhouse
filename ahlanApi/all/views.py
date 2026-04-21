@@ -736,6 +736,25 @@ class ReportViewSet(viewsets.GenericViewSet):
 # —— Telegram proxy (CORS va token xavfsizligi: brauzer API ga so'rov, backend Telegram ga) ——
 TELEGRAM_API = "https://api.telegram.org"
 
+
+def _normalize_telegram_api_response(r: requests.Response) -> Response:
+    """
+    Telegram API ko'pincha HTTP 200 bilan {"ok": false, "description": "..."} qaytaradi.
+    Brauzer faqat status kodiga qarab muvaffaqiyat deb xato qilmaydi.
+    """
+    try:
+        data = r.json()
+    except Exception:
+        body = (r.text or "").strip() or f"HTTP {r.status_code}"
+        return Response({"detail": body}, status=status.HTTP_502_BAD_GATEWAY)
+    if not isinstance(data, dict):
+        return Response({"detail": "Telegram javobi noto'g'ri formatda"}, status=status.HTTP_502_BAD_GATEWAY)
+    if data.get("ok") is not True:
+        desc = data.get("description") or "Telegram so'rovi muvaffaqiyatsiz"
+        return Response({"detail": desc, "telegram": data}, status=status.HTTP_502_BAD_GATEWAY)
+    return Response(data, status=status.HTTP_200_OK)
+
+
 class TelegramSendMessageView(APIView):
     """POST { chat_id, text, parse_mode? } — Telegram sendMessage proxy."""
     permission_classes = [permissions.IsAuthenticated]
@@ -753,11 +772,7 @@ class TelegramSendMessageView(APIView):
         url = f"{TELEGRAM_API}/bot{token}/sendMessage"
         try:
             r = requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": parse_mode}, timeout=15)
-            try:
-                data = r.json()
-            except Exception:
-                data = {"detail": r.text or f"HTTP {r.status_code}"}
-            return Response(data, status=r.status_code)
+            return _normalize_telegram_api_response(r)
         except requests.RequestException as e:
             return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
 
@@ -782,10 +797,6 @@ class TelegramSendPhotoView(APIView):
             files = {"photo": (getattr(photo, "name") or "image.jpg", photo, photo.content_type or "image/jpeg")}
             data = {"chat_id": chat_id, "caption": caption, "parse_mode": parse_mode}
             r = requests.post(url, data=data, files=files, timeout=30)
-            try:
-                resp_data = r.json()
-            except Exception:
-                resp_data = {"detail": r.text or f"HTTP {r.status_code}"}
-            return Response(resp_data, status=r.status_code)
+            return _normalize_telegram_api_response(r)
         except requests.RequestException as e:
             return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
