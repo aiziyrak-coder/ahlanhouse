@@ -197,18 +197,37 @@ Yangi loglarni ko‘rish: `pm2 flush` keyin `pm2 restart ahlan-house`, so‘ng `
 
 Loyihada **alohida bot dasturi (PM2) yo‘q**: xabarlar **har safar** Django orqali `https://api.telegram.org/bot.../sendMessage` ga yuboriladi. Shuning uchun:
 
-1. **Serverda** `TELEGRAM_BOT_TOKEN` **Gunicorn muhitida** bo‘lishi kerak (`ahlanApi/.env` yoki `systemd` `Environment=`).
+1. **Serverda** `TELEGRAM_BOT_TOKEN` bo‘lishi kerak: **`/var/www/ahlanhouse/ahlanApi/.env`** fayliga qator qo‘shing (`KEY=value`) — Django ishga tushganda avtomatik o‘qiladi; yoki `systemd` / Gunicorn `Environment=` orqali.
 2. Frontend `NEXT_PUBLIC_TELEGRAM_CHAT_ID` (yoki kodda sukut) — **guruh yoki shaxsiy chat id**; bot ushbu chatga **xabar yubora oladigan** bo‘lishi kerak (guruhda bot **admin** yoki kamida a’zo).
 3. Token yo‘q bo‘lsa API **`503`** qaytaradi: `Telegram bot token sozlanmagan.`
 4. Telegram `{"ok": false}` qaytarsa endi API **`502`** bilan `detail` qaytaradi — brauzerda xato aniq ko‘rinadi.
 
-**Tekshiruv (serverda):**
+**Token qo‘shish (`ahlanApi/.env`):**
+
+```bash
+nano /var/www/ahlanhouse/ahlanApi/.env
+```
+
+Pastga qator qo‘shing (o‘z tokeningiz):
+
+```
+TELEGRAM_BOT_TOKEN=123456789:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Saqlang (`Ctrl+O`, Enter, `Ctrl+X`). Keyin test:
 
 ```bash
 cd /var/www/ahlanhouse/ahlanApi
 source venv/bin/activate
-# .env da TELEGRAM_BOT_TOKEN bo'lsa, yoki:
-# export TELEGRAM_BOT_TOKEN='123456:ABC-...'
+python manage.py telegram_test -1003733316489
+```
+
+Gunicorn ishlayotgan bo‘lsa, token yangilangach **backendni qayta ishga tushiring** (masalan `pkill -f gunicorn` va qayta `gunicorn ...` yoki `systemctl restart` — sizda qanday bo‘lsa).
+
+**Tekshiruv (muhit o‘zidan, .envsiz):**
+
+```bash
+export TELEGRAM_BOT_TOKEN='123456:ABC-...'
 python manage.py telegram_test -1003733316489
 ```
 

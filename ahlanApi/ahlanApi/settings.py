@@ -4,6 +4,35 @@ from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def _load_local_env_file() -> None:
+    """
+    ahlanApi/.env faylini o'qiydi (KEY=value). Tizim muhitida allaqachon bor bo'lsa, ustidan yozmaydi.
+    Gunicorn/systemd faqat muhit beradi; `manage.py` va dev uchun .env qulay.
+    """
+    path = BASE_DIR / ".env"
+    if not path.is_file():
+        return
+    try:
+        raw = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return
+    for line in raw.splitlines():
+        s = line.strip()
+        if not s or s.startswith("#") or "=" not in s:
+            continue
+        if s.lower().startswith("export "):
+            s = s[7:].strip()
+        key, _, val = s.partition("=")
+        key = key.strip()
+        if not key:
+            continue
+        val = val.strip().strip('"').strip("'")
+        os.environ.setdefault(key, val)
+
+
+_load_local_env_file()
+
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-only-change-in-production')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
 _default_hosts = 'ahlan.uz,api.ahlan.uz,64.226.109.56,localhost,127.0.0.1'
