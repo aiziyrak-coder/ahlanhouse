@@ -17,6 +17,7 @@ def _load_local_env_file() -> None:
         raw = path.read_text(encoding="utf-8", errors="ignore")
     except OSError:
         return
+    raw = raw.lstrip("\ufeff")
     for line in raw.splitlines():
         s = line.strip()
         if not s or s.startswith("#") or "=" not in s:
@@ -28,7 +29,10 @@ def _load_local_env_file() -> None:
         if not key:
             continue
         val = val.strip().strip('"').strip("'")
-        os.environ.setdefault(key, val)
+        # setdefault bo'sh "" uchun ishlamaydi — systemd bo'sh TELEGRAM_BOT_TOKEN bersa .env o'qilmay qolardi
+        prev = os.environ.get(key)
+        if prev is None or (isinstance(prev, str) and not prev.strip()):
+            os.environ[key] = val
 
 
 _load_local_env_file()

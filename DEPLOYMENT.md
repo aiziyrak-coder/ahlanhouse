@@ -224,6 +224,8 @@ python manage.py telegram_test -1003733316489
 
 Gunicorn ishlayotgan bo‘lsa, token yangilangach **backendni qayta ishga tushiring** (masalan `pkill -f gunicorn` va qayta `gunicorn ...` yoki `systemctl restart` — sizda qanday bo‘lsa).
 
+Agar `.env`da token bor-yu `telegram_test` baribir «yo‘q» desa: muhitda **bo‘sh** `TELEGRAM_BOT_TOKEN` qolib ketgan bo‘lishi mumkin. Tekshiring: `env | grep TELEGRAM` — chiqsa `unset TELEGRAM_BOT_TOKEN`, so‘ng test. (Kod yangilanishi: bo‘sh muhit o‘zgaruvchisida `.env` qiymati endi ishlatiladi — `git pull`.)
+
 **Tekshiruv (muhit o‘zidan, .envsiz):**
 
 ```bash
