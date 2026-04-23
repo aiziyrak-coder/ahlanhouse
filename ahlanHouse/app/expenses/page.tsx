@@ -871,15 +871,13 @@ export default function ExpensesPage() {
                                     <div className="space-y-1"><Label htmlFor="supplier">Yetkazib beruvchi *</Label>
                                         <div className="flex items-center space-x-2">
                                             <Select required value={formData.supplier} onValueChange={(v) => handleSelectChange("supplier", v)} name="supplier"><SelectTrigger><SelectValue placeholder="Tanlang..." /></SelectTrigger><SelectContent>{suppliers.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.company_name}</SelectItem>)}</SelectContent></Select>
-                                            <Dialog open={addSupplierOpen} onOpenChange={setAddSupplierOpen}><DialogTrigger asChild><Button type="button" variant="outline" size="icon"><Plus className="h-4 w-4" /></Button></DialogTrigger>
-                                                <DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Yangi yetkazib beruvchi</DialogTitle><DialogDescription>Backend talabi: kompaniya, aloqa, telefon (max 15), manzil majburiy.</DialogDescription></DialogHeader><div className="grid gap-4 py-4"><Input name="company_name" placeholder="Kompaniya nomi *" value={newSupplierData.company_name} onChange={handleSupplierChange} /><Input name="contact_person_name" placeholder="Aloqa shaxsi *" value={newSupplierData.contact_person_name} onChange={handleSupplierChange} /><Input name="phone_number" placeholder="Telefon * (masalan +998901234567)" maxLength={15} value={newSupplierData.phone_number} onChange={handleSupplierChange} /><Textarea name="address" placeholder="Manzil *" value={newSupplierData.address} onChange={handleSupplierChange} /><Textarea name="description" placeholder="Tavsif (ixtiyoriy)" value={newSupplierData.description} onChange={handleSupplierChange} /></div><DialogFooter><Button onClick={createSupplier} disabled={isSupplierSubmitting}>{isSupplierSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Qo'shish</Button></DialogFooter></DialogContent></Dialog>
+                                            <Button type="button" variant="outline" size="icon" onClick={() => setAddSupplierOpen(true)} aria-label="Yangi yetkazib beruvchi"><Plus className="h-4 w-4" /></Button>
                                         </div>
                                     </div>
                                     <div className="space-y-1"><Label htmlFor="expense_type">Xarajat turi *</Label>
                                         <div className="flex items-center space-x-2">
                                             <Select required value={formData.expense_type} onValueChange={(v) => handleSelectChange("expense_type", v)} name="expense_type"><SelectTrigger><SelectValue placeholder="Tanlang..." /></SelectTrigger><SelectContent>{expenseTypes.map(t => <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>)}</SelectContent></Select>
-                                            <Dialog open={addExpenseTypeOpen} onOpenChange={setAddExpenseTypeOpen}><DialogTrigger asChild><Button type="button" variant="outline" size="icon"><Plus className="h-4 w-4" /></Button></DialogTrigger>
-                                                <DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Yangi xarajat turi</DialogTitle></DialogHeader><div className="grid gap-4 py-4"><Input placeholder="Nomi *" value={newExpenseTypeName} onChange={(e) => setNewExpenseTypeName(e.target.value)} /></div><DialogFooter><Button onClick={createExpenseType} disabled={isExpenseTypeSubmitting}>{isExpenseTypeSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Qo'shish</Button></DialogFooter></DialogContent></Dialog>
+                                            <Button type="button" variant="outline" size="icon" onClick={() => setAddExpenseTypeOpen(true)} aria-label="Yangi xarajat turi"><Plus className="h-4 w-4" /></Button>
                                         </div>
                                     </div>
                                     <div className="space-y-1"><Label htmlFor="object">Obyekt *</Label><Select required value={formData.object} onValueChange={(v) => handleSelectChange("object", v)} name="object"><SelectTrigger><SelectValue placeholder="Tanlang..." /></SelectTrigger><SelectContent>{properties.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}</SelectContent></Select></div>
@@ -931,6 +929,22 @@ export default function ExpensesPage() {
                                     <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>Bekor qilish</Button>
                                     <Button type="submit" form="add-expense-form" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Saqlash</Button>
                                 </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+
+                        {/* Alohida modal (ichma-ich Dialog emas — aria-hidden / fokus ogohlantirishini oldini oladi) */}
+                        <Dialog open={addSupplierOpen} onOpenChange={setAddSupplierOpen}>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader><DialogTitle>Yangi yetkazib beruvchi</DialogTitle><DialogDescription>Backend talabi: kompaniya, aloqa, telefon (max 15), manzil majburiy.</DialogDescription></DialogHeader>
+                                <div className="grid gap-4 py-4"><Input name="company_name" placeholder="Kompaniya nomi *" value={newSupplierData.company_name} onChange={handleSupplierChange} /><Input name="contact_person_name" placeholder="Aloqa shaxsi *" value={newSupplierData.contact_person_name} onChange={handleSupplierChange} /><Input name="phone_number" placeholder="Telefon * (masalan +998901234567)" maxLength={15} value={newSupplierData.phone_number} onChange={handleSupplierChange} /><Textarea name="address" placeholder="Manzil *" value={newSupplierData.address} onChange={handleSupplierChange} /><Textarea name="description" placeholder="Tavsif (ixtiyoriy)" value={newSupplierData.description} onChange={handleSupplierChange} /></div>
+                                <DialogFooter><Button onClick={createSupplier} disabled={isSupplierSubmitting}>{isSupplierSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Qo&apos;shish</Button></DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                        <Dialog open={addExpenseTypeOpen} onOpenChange={setAddExpenseTypeOpen}>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader><DialogTitle>Yangi xarajat turi</DialogTitle></DialogHeader>
+                                <div className="grid gap-4 py-4"><Input placeholder="Nomi *" value={newExpenseTypeName} onChange={(e) => setNewExpenseTypeName(e.target.value)} /></div>
+                                <DialogFooter><Button onClick={createExpenseType} disabled={isExpenseTypeSubmitting}>{isExpenseTypeSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Qo&apos;shish</Button></DialogFooter>
                             </DialogContent>
                         </Dialog>
                     </div>
