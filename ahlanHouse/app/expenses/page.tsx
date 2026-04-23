@@ -515,7 +515,7 @@ export default function ExpensesPage() {
             const formPayload = new FormData();
             formPayload.append("object", formData.object);
             formPayload.append("supplier", formData.supplier);
-            formPayload.append("amount", formData.amount);
+            formPayload.append("amount", String(formData.amount).trim().replace(/\s/g, "").replace(",", "."));
             formPayload.append("expense_type", formData.expense_type);
             formPayload.append("date", toApiDate(formData.date));
             formPayload.append("comment", formData.comment.trim());
@@ -592,7 +592,7 @@ export default function ExpensesPage() {
             const formPayload = new FormData();
             formPayload.append("object", formData.object);
             formPayload.append("supplier", formData.supplier);
-            formPayload.append("amount", formData.amount);
+            formPayload.append("amount", String(formData.amount).trim().replace(/\s/g, "").replace(",", "."));
             formPayload.append("expense_type", formData.expense_type);
             formPayload.append("date", toApiDate(formData.date));
             formPayload.append("comment", formData.comment.trim());
@@ -705,10 +705,26 @@ export default function ExpensesPage() {
         }
     };
     
+    const formatApiErrorPayload = (body: unknown, status: number): string => {
+        if (body && typeof body === "object") {
+            const o = body as Record<string, unknown>;
+            if (typeof o.detail === "string") return o.detail;
+            const parts = Object.entries(o).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`);
+            if (parts.length) return parts.join("; ");
+        }
+        return status === 403 ? "Ruxsat yo‘q (faqat administrator)." : `So‘rov xato (${status})`;
+    };
+
     const createItem = (url: string, data: any, stateSetter: React.Dispatch<React.SetStateAction<any[]>>, sortFn: (a: any, b: any) => number, successMsg: string, submittingsetter: React.Dispatch<React.SetStateAction<boolean>>, itemType: 'supplier' | 'expense_type', closeFn?: () => void, resetFn?: () => void) => {
         submittingsetter(true);
         fetch(url, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(data) })
-            .then(res => { if (!res.ok) throw new Error("Qo'shishda xatolik"); return res.json(); })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const errBody = await res.json().catch(() => ({}));
+                    throw new Error(formatApiErrorPayload(errBody, res.status));
+                }
+                return res.json();
+            })
             .then(newItem => {
                 stateSetter(prev => [...prev, newItem].sort(sortFn));
                 toast.success(successMsg);
@@ -731,8 +747,24 @@ export default function ExpensesPage() {
     };
 
     const createSupplier = () => {
-        if (!newSupplierData.company_name.trim()) return toast.error("Kompaniya nomi kiritilishi shart");
-        createItem(`${API_BASE_URL}/suppliers/`, newSupplierData, setSuppliers, (a, b) => a.company_name.localeCompare(b.company_name), `"${newSupplierData.company_name}" qo'shildi`, setIsSupplierSubmitting, 'supplier', () => setAddSupplierOpen(false), () => setNewSupplierData(initialNewSupplierData));
+        const company = newSupplierData.company_name.trim();
+        const contact = newSupplierData.contact_person_name.trim();
+        const phone = newSupplierData.phone_number.trim().replace(/\s+/g, "");
+        const addr = newSupplierData.address.trim();
+        if (!company) return toast.error("Kompaniya nomi kiritilishi shart");
+        if (!contact) return toast.error("Aloqa shaxsi kiritilishi shart");
+        if (!phone) return toast.error("Telefon kiritilishi shart");
+        if (!addr) return toast.error("Manzil kiritilishi shart");
+        if (phone.length > 15) return toast.error("Telefon ko‘pi bilan 15 belgi (masalan +998901234567)");
+        const payload = {
+            company_name: company,
+            contact_person_name: contact,
+            phone_number: phone,
+            address: addr,
+            description: newSupplierData.description.trim(),
+            balance: "0.00",
+        };
+        createItem(`${API_BASE_URL}/suppliers/`, payload, setSuppliers, (a, b) => a.company_name.localeCompare(b.company_name), `"${company}" qo'shildi`, setIsSupplierSubmitting, 'supplier', () => setAddSupplierOpen(false), () => setNewSupplierData(initialNewSupplierData));
     };
     
     const createExpenseType = () => {
@@ -840,7 +872,7 @@ export default function ExpensesPage() {
                                         <div className="flex items-center space-x-2">
                                             <Select required value={formData.supplier} onValueChange={(v) => handleSelectChange("supplier", v)} name="supplier"><SelectTrigger><SelectValue placeholder="Tanlang..." /></SelectTrigger><SelectContent>{suppliers.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.company_name}</SelectItem>)}</SelectContent></Select>
                                             <Dialog open={addSupplierOpen} onOpenChange={setAddSupplierOpen}><DialogTrigger asChild><Button type="button" variant="outline" size="icon"><Plus className="h-4 w-4" /></Button></DialogTrigger>
-                                                <DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Yangi yetkazib beruvchi</DialogTitle></DialogHeader><div className="grid gap-4 py-4"><Input name="company_name" placeholder="Kompaniya nomi *" value={newSupplierData.company_name} onChange={handleSupplierChange} /><Input name="contact_person_name" placeholder="Kontakt" value={newSupplierData.contact_person_name} onChange={handleSupplierChange} /><Input name="phone_number" placeholder="Telefon" value={newSupplierData.phone_number} onChange={handleSupplierChange} /><Textarea name="address" placeholder="Manzil" value={newSupplierData.address} onChange={handleSupplierChange} /></div><DialogFooter><Button onClick={createSupplier} disabled={isSupplierSubmitting}>{isSupplierSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Qo'shish</Button></DialogFooter></DialogContent></Dialog>
+                                                <DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Yangi yetkazib beruvchi</DialogTitle><DialogDescription>Backend talabi: kompaniya, aloqa, telefon (max 15), manzil majburiy.</DialogDescription></DialogHeader><div className="grid gap-4 py-4"><Input name="company_name" placeholder="Kompaniya nomi *" value={newSupplierData.company_name} onChange={handleSupplierChange} /><Input name="contact_person_name" placeholder="Aloqa shaxsi *" value={newSupplierData.contact_person_name} onChange={handleSupplierChange} /><Input name="phone_number" placeholder="Telefon * (masalan +998901234567)" maxLength={15} value={newSupplierData.phone_number} onChange={handleSupplierChange} /><Textarea name="address" placeholder="Manzil *" value={newSupplierData.address} onChange={handleSupplierChange} /><Textarea name="description" placeholder="Tavsif (ixtiyoriy)" value={newSupplierData.description} onChange={handleSupplierChange} /></div><DialogFooter><Button onClick={createSupplier} disabled={isSupplierSubmitting}>{isSupplierSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Qo'shish</Button></DialogFooter></DialogContent></Dialog>
                                         </div>
                                     </div>
                                     <div className="space-y-1"><Label htmlFor="expense_type">Xarajat turi *</Label>

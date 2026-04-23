@@ -179,15 +179,42 @@ class SupplierSerializer(serializers.ModelSerializer):
     def get_balance_details(self, obj):
         return obj.get_balance_details()
 
+    def validate_company_name(self, value):
+        v = (value or '').strip()
+        if not v:
+            raise serializers.ValidationError("Bu maydon bo'sh bo'lmasligi kerak.")
+        return v
+
+    def validate_contact_person_name(self, value):
+        v = (value or '').strip()
+        if not v:
+            raise serializers.ValidationError("Bu maydon bo'sh bo'lmasligi kerak.")
+        return v
+
+    def validate_phone_number(self, value):
+        v = (value or '').strip().replace(' ', '')
+        if not v:
+            raise serializers.ValidationError("Bu maydon bo'sh bo'lmasligi kerak.")
+        if len(v) > 15:
+            raise serializers.ValidationError("Telefon ko'pi bilan 15 belgi bo'lishi kerak.")
+        return v
+
+    def validate_address(self, value):
+        v = (value or '').strip()
+        if not v:
+            raise serializers.ValidationError("Bu maydon bo'sh bo'lmasligi kerak.")
+        return v
+
 def _normalize_expense_status(value):
     """Frontend ASCII apostrophe va backend Unicode apostrofini birlashtiradi."""
     if not value or not isinstance(value, str):
         return value
-    v = value.strip().replace('\u2019', "'").replace('\u0027', "'")
-    if v in ("To'langan", "To'langan"):
-        return Expense.STATUS_CHOICES[0][0]
-    if v == "Kutilmoqda":
-        return Expense.STATUS_CHOICES[1][0]
+    paid, pending = Expense.STATUS_CHOICES[0][0], Expense.STATUS_CHOICES[1][0]
+    v = value.strip().replace("\u2018", "'").replace("\u2019", "'").replace("\u0027", "'")
+    if v == paid or v == "To'langan":
+        return paid
+    if v == pending or v == "Kutilmoqda":
+        return pending
     return value
 
 
@@ -219,6 +246,8 @@ class ExpenseSerializer(serializers.ModelSerializer):
             val = data['image']
             if val is None or (isinstance(val, str) and not (val or '').strip()):
                 data.pop('image', None)
+        if 'amount' in data and isinstance(data.get('amount'), str):
+            data['amount'] = data['amount'].strip().replace(' ', '').replace(',', '.')
         # Normalize status BEFORE ChoiceField validation (frontend sends ASCII apostrophe)
         if data.get('status') and isinstance(data.get('status'), str):
             data['status'] = _normalize_expense_status(data['status'])
